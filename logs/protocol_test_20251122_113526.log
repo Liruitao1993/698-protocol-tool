@@ -1,0 +1,439 @@
+2025-11-22 11:35:26.003 | INFO     | utils.logger:info:52 | 应用程序启动
+2025-11-22 11:37:57.835 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:37:57.836 | INFO     | utils.logger:info:52 | 当前表格行数: 0
+2025-11-22 11:37:57.839 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:37:57.840 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:09.845 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:09.846 | INFO     | utils.logger:info:52 | 当前表格行数: 2
+2025-11-22 11:38:09.848 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:09.849 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:13.197 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:13.198 | INFO     | utils.logger:info:52 | 当前表格行数: 4
+2025-11-22 11:38:13.200 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:13.201 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:14.324 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:14.325 | INFO     | utils.logger:info:52 | 当前表格行数: 6
+2025-11-22 11:38:14.327 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:14.328 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:14.984 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:14.985 | INFO     | utils.logger:info:52 | 当前表格行数: 8
+2025-11-22 11:38:14.987 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:14.988 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:15.380 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:15.380 | INFO     | utils.logger:info:52 | 当前表格行数: 10
+2025-11-22 11:38:15.382 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:15.383 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:15.729 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:15.730 | INFO     | utils.logger:info:52 | 当前表格行数: 12
+2025-11-22 11:38:15.732 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:15.733 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:16.049 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:16.050 | INFO     | utils.logger:info:52 | 当前表格行数: 14
+2025-11-22 11:38:16.052 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:16.052 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:16.393 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-11-22 11:38:16.393 | INFO     | utils.logger:info:52 | 当前表格行数: 16
+2025-11-22 11:38:16.396 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-11-22 11:38:16.396 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-11-22 11:38:35.742 | INFO     | utils.logger:info:52 | 开始发送所有帧
+2025-11-22 11:38:37.933 | INFO     | utils.logger:info:52 | 正在发送帧 1 (Frame_1)...
+2025-11-22 11:38:39.006 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 发送成功
+2025-11-22 11:38:39.025 | INFO     | utils.logger:info:52 | 正在发送帧 2 (Frame_2)...
+2025-11-22 11:38:41.405 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_2 发送成功
+2025-11-22 11:38:41.423 | INFO     | utils.logger:info:52 | 正在发送帧 3 (Frame_3)...
+2025-11-22 11:38:42.967 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_3 发送成功
+2025-11-22 11:38:43.002 | INFO     | utils.logger:info:52 | 正在发送帧 4 (Frame_4)...
+2025-11-22 11:38:43.976 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_4 发送成功
+2025-11-22 11:38:44.007 | INFO     | utils.logger:info:52 | 正在发送帧 5 (Frame_5)...
+2025-11-22 11:38:44.512 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_5 发送成功
+2025-11-22 11:38:44.528 | INFO     | utils.logger:info:52 | 正在发送帧 6 (Frame_6)...
+2025-11-22 11:38:44.755 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_6 发送成功
+2025-11-22 11:38:44.773 | INFO     | utils.logger:info:52 | 正在发送帧 7 (Frame_7)...
+2025-11-22 11:38:45.003 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_7 发送成功
+2025-11-22 11:38:45.021 | INFO     | utils.logger:info:52 | 正在发送帧 8 (Frame_8)...
+2025-11-22 11:38:45.488 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_8 发送成功
+2025-11-22 11:38:45.505 | INFO     | utils.logger:info:52 | 正在发送帧 9 (Frame_9)...
+2025-11-22 11:38:45.765 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_9 发送成功
+2025-11-22 11:38:45.782 | INFO     | utils.logger:info:52 | 正在发送帧 10 (Frame_10)...
+2025-11-22 11:38:45.951 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_10 发送成功
+2025-11-22 11:38:45.985 | INFO     | utils.logger:info:52 | 正在发送帧 11 (Frame_11)...
+2025-11-22 11:38:46.138 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_11 发送成功
+2025-11-22 11:38:46.158 | INFO     | utils.logger:info:52 | 正在发送帧 12 (Frame_12)...
+2025-11-22 11:38:46.325 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_12 发送成功
+2025-11-22 11:38:46.341 | INFO     | utils.logger:info:52 | 正在发送帧 13 (Frame_13)...
+2025-11-22 11:38:46.506 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_13 发送成功
+2025-11-22 11:38:46.524 | INFO     | utils.logger:info:52 | 正在发送帧 14 (Frame_14)...
+2025-11-22 11:38:46.704 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_14 发送成功
+2025-11-22 11:38:46.721 | INFO     | utils.logger:info:52 | 正在发送帧 15 (Frame_15)...
+2025-11-22 11:38:46.901 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_15 发送成功
+2025-11-22 11:38:46.918 | INFO     | utils.logger:info:52 | 正在发送帧 16 (Frame_16)...
+2025-11-22 11:38:47.224 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_16 发送成功
+2025-11-22 11:38:47.240 | INFO     | utils.logger:info:52 | 正在发送帧 17 (Frame_17)...
+2025-11-22 11:38:47.478 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_17 发送成功
+2025-11-22 11:38:47.497 | INFO     | utils.logger:info:52 | 正在发送帧 18 (Frame_18)...
+2025-11-22 11:38:47.727 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_18 发送成功
+2025-11-22 11:38:47.744 | INFO     | utils.logger:info:52 | [SUCCESS] 发送完成: 成功 18 个, 失败 0 个
+2025-11-22 11:38:47.754 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_1" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:47.759 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:47.754]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_2</span>
+                <span style='color: #666;'>行号: 2</span>
+            </div>
+            
+2025-11-22 11:38:48.758 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_3" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:48.759 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:48.758]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_4</span>
+                <span style='color: #666;'>行号: 4</span>
+            </div>
+            
+2025-11-22 11:38:49.753 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_5" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:49.754 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:49.753]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_6</span>
+                <span style='color: #666;'>行号: 6</span>
+            </div>
+            
+2025-11-22 11:38:50.751 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_7" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:50.751 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:50.750]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_8</span>
+                <span style='color: #666;'>行号: 8</span>
+            </div>
+            
+2025-11-22 11:38:51.751 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_9" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:51.751 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:51.751]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_10</span>
+                <span style='color: #666;'>行号: 10</span>
+            </div>
+            
+2025-11-22 11:38:52.752 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_11" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:52.752 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:52.751]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_12</span>
+                <span style='color: #666;'>行号: 12</span>
+            </div>
+            
+2025-11-22 11:38:53.510 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2025-11-22 11:38:53.751 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_13" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:53.752 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:38:54.754 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:38:54.755 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:54.754]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_14</span>
+                <span style='color: #666;'>行号: 14</span>
+            </div>
+            
+2025-11-22 11:38:55.753 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_15" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:55.754 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:38:56.756 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:38:56.756 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:56.755]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_16</span>
+                <span style='color: #666;'>行号: 16</span>
+            </div>
+            
+2025-11-22 11:38:56.777 | INFO     | utils.logger:info:52 | 开始发送所有帧
+2025-11-22 11:38:57.753 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_17" 的数据</span>
+                </div>
+                
+2025-11-22 11:38:57.753 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:38:58.756 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:38:58.757 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:38:58.756]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_18</span>
+                <span style='color: #666;'>行号: 18</span>
+            </div>
+            
+2025-11-22 11:38:58.851 | INFO     | utils.logger:info:52 | 正在发送帧 1 (Frame_1)...
+2025-11-22 11:38:58.852 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_1 的数据
+2025-11-22 11:38:58.852 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 发送成功
+2025-11-22 11:38:58.865 | INFO     | utils.logger:info:52 | 正在发送帧 2 (Frame_2)...
+2025-11-22 11:38:58.866 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:38:59.868 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:38:59.868 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_2 发送成功
+2025-11-22 11:38:59.886 | INFO     | utils.logger:info:52 | 正在发送帧 3 (Frame_3)...
+2025-11-22 11:38:59.887 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_3 的数据
+2025-11-22 11:38:59.887 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_3 发送成功
+2025-11-22 11:38:59.890 | INFO     | utils.logger:info:52 | 正在发送帧 4 (Frame_4)...
+2025-11-22 11:38:59.891 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:00.894 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:00.895 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_4 发送成功
+2025-11-22 11:39:00.912 | INFO     | utils.logger:info:52 | 正在发送帧 5 (Frame_5)...
+2025-11-22 11:39:00.913 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_5 的数据
+2025-11-22 11:39:00.913 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_5 发送成功
+2025-11-22 11:39:00.915 | INFO     | utils.logger:info:52 | 正在发送帧 6 (Frame_6)...
+2025-11-22 11:39:00.916 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:01.919 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:01.919 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_6 发送成功
+2025-11-22 11:39:01.937 | INFO     | utils.logger:info:52 | 正在发送帧 7 (Frame_7)...
+2025-11-22 11:39:01.937 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_7 的数据
+2025-11-22 11:39:01.938 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_7 发送成功
+2025-11-22 11:39:01.941 | INFO     | utils.logger:info:52 | 正在发送帧 8 (Frame_8)...
+2025-11-22 11:39:01.941 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:02.943 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:02.944 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_8 发送成功
+2025-11-22 11:39:02.960 | INFO     | utils.logger:info:52 | 正在发送帧 9 (Frame_9)...
+2025-11-22 11:39:02.961 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_9 的数据
+2025-11-22 11:39:02.961 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_9 发送成功
+2025-11-22 11:39:02.963 | INFO     | utils.logger:info:52 | 正在发送帧 10 (Frame_10)...
+2025-11-22 11:39:02.964 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:03.965 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:03.966 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_10 发送成功
+2025-11-22 11:39:03.983 | INFO     | utils.logger:info:52 | 正在发送帧 11 (Frame_11)...
+2025-11-22 11:39:03.983 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_11 的数据
+2025-11-22 11:39:03.983 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_11 发送成功
+2025-11-22 11:39:03.985 | INFO     | utils.logger:info:52 | 正在发送帧 12 (Frame_12)...
+2025-11-22 11:39:03.986 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:04.987 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:04.988 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_12 发送成功
+2025-11-22 11:39:05.007 | INFO     | utils.logger:info:52 | 正在发送帧 13 (Frame_13)...
+2025-11-22 11:39:05.008 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_13 的数据
+2025-11-22 11:39:05.008 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_13 发送成功
+2025-11-22 11:39:05.010 | INFO     | utils.logger:info:52 | 正在发送帧 14 (Frame_14)...
+2025-11-22 11:39:05.010 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:06.013 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:06.014 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_14 发送成功
+2025-11-22 11:39:06.033 | INFO     | utils.logger:info:52 | 正在发送帧 15 (Frame_15)...
+2025-11-22 11:39:06.033 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_15 的数据
+2025-11-22 11:39:06.034 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_15 发送成功
+2025-11-22 11:39:06.036 | INFO     | utils.logger:info:52 | 正在发送帧 16 (Frame_16)...
+2025-11-22 11:39:06.036 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:07.038 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:07.039 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_16 发送成功
+2025-11-22 11:39:07.056 | INFO     | utils.logger:info:52 | 正在发送帧 17 (Frame_17)...
+2025-11-22 11:39:07.057 | ERROR    | utils.logger:error:58 | 错误: 找不到帧 Frame_17 的数据
+2025-11-22 11:39:07.057 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_17 发送成功
+2025-11-22 11:39:07.059 | INFO     | utils.logger:info:52 | 正在发送帧 18 (Frame_18)...
+2025-11-22 11:39:07.060 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:08.062 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:08.063 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_18 发送成功
+2025-11-22 11:39:08.081 | INFO     | utils.logger:info:52 | [SUCCESS] 发送完成: 成功 18 个, 失败 0 个
+2025-11-22 11:39:08.081 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_1" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:08.082 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:09.084 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:09.085 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:09.084]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_2</span>
+                <span style='color: #666;'>行号: 2</span>
+            </div>
+            
+2025-11-22 11:39:10.079 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_3" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:10.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:11.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:11.082 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:11.082]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_4</span>
+                <span style='color: #666;'>行号: 4</span>
+            </div>
+            
+2025-11-22 11:39:12.078 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_5" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:12.079 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:13.081 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:13.082 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:13.080]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_6</span>
+                <span style='color: #666;'>行号: 6</span>
+            </div>
+            
+2025-11-22 11:39:14.082 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_7" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:14.083 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:15.085 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:15.086 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:15.085]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_8</span>
+                <span style='color: #666;'>行号: 8</span>
+            </div>
+            
+2025-11-22 11:39:16.080 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_9" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:16.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:17.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:17.083 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:17.082]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_10</span>
+                <span style='color: #666;'>行号: 10</span>
+            </div>
+            
+2025-11-22 11:39:18.080 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_11" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:18.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:19.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:19.083 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:19.082]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_12</span>
+                <span style='color: #666;'>行号: 12</span>
+            </div>
+            
+2025-11-22 11:39:20.079 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_13" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:20.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:21.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:21.083 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:21.082]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_14</span>
+                <span style='color: #666;'>行号: 14</span>
+            </div>
+            
+2025-11-22 11:39:22.079 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_15" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:22.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:23.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:23.083 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:23.082]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_16</span>
+                <span style='color: #666;'>行号: 16</span>
+            </div>
+            
+2025-11-22 11:39:24.079 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>错误: 找不到帧 "Frame_17" 的数据</span>
+                </div>
+                
+2025-11-22 11:39:24.080 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68130003050605040302011032390501000004c316
+2025-11-22 11:39:25.082 | INFO     | utils.logger:info:52 | 收到响应: 接收超时
+2025-11-22 11:39:25.083 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 11:39:25.081]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>68130003050605040302011032390501000004c316</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_18</span>
+                <span style='color: #666;'>行号: 18</span>
+            </div>
+            

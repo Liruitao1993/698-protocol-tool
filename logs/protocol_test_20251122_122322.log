@@ -1,0 +1,339 @@
+2025-11-22 12:23:22.577 | INFO     | utils.logger:info:52 | 应用程序启动
+2025-11-22 12:23:22.578 | INFO     | utils.logger:info:52 | 协议对象已设置
+2025-11-22 12:32:09.647 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2025-11-22 12:32:11.759 | INFO     | utils.logger:info:52 | 开始发送所有帧
+2025-11-22 12:32:13.258 | INFO     | utils.logger:info:52 | 正在发送帧 1 (Frame_1)...
+2025-11-22 12:32:13.517 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:13.259]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f3980200004000020100550516</span>
+            </div>
+            
+2025-11-22 12:32:13.518 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:14.521 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:14.519]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:14.522 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 发送成功
+2025-11-22 12:32:14.557 | INFO     | utils.logger:info:52 | 正在发送帧 2 (Frame_2)...
+2025-11-22 12:32:14.558 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:14.557]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:14.558 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:15.561 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:15.559]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:15.562 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_2 发送成功
+2025-11-22 12:32:15.580 | INFO     | utils.logger:info:52 | 正在发送帧 3 (Frame_3)...
+2025-11-22 12:32:15.581 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:15.580]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:15.581 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:16.584 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:16.582]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:16.584 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_3 发送成功
+2025-11-22 12:32:16.603 | INFO     | utils.logger:info:52 | 正在发送帧 4 (Frame_4)...
+2025-11-22 12:32:16.604 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:16.603]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681d001305060504030201107b8f0501004000020101020304050600d96516</span>
+            </div>
+            
+2025-11-22 12:32:16.605 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:17.608 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:17.607]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:17.608 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_4 发送成功
+2025-11-22 12:32:17.628 | INFO     | utils.logger:info:52 | 正在发送帧 5 (Frame_5)...
+2025-11-22 12:32:17.629 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:17.628]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:17.630 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:18.633 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:18.631]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:18.633 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_5 发送成功
+2025-11-22 12:32:18.650 | INFO     | utils.logger:info:52 | [SUCCESS] 发送完成: 成功 5 个, 失败 0 个
+2025-11-22 12:32:18.651 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:18.651]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f3980200004000020100550516</span>
+            </div>
+            
+2025-11-22 12:32:18.652 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:19.655 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:19.654]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:19.656 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:19.656]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700130506050403020110f3980200004000020100550516</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_1</span>
+                <span style='color: #666;'>行号: 1</span>
+            </div>
+            
+2025-11-22 12:32:20.662 | WARNING  | utils.logger:warning:55 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 帧 1 (Frame_1) 执行超时</span>
+                <br>
+                <span style='color: #856404;'>超时时间: 1000ms</span>
+            </div>
+            
+2025-11-22 12:32:20.664 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:20.663]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:20.665 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:21.667 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:21.666]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:21.668 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:21.668]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700130506050403020110f39805010040000201008e0616</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_2</span>
+                <span style='color: #666;'>行号: 2</span>
+            </div>
+            
+2025-11-22 12:32:22.657 | WARNING  | utils.logger:warning:55 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 帧 2 (Frame_2) 执行超时</span>
+                <br>
+                <span style='color: #856404;'>超时时间: 1000ms</span>
+            </div>
+            
+2025-11-22 12:32:22.658 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:22.657]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:22.658 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:23.661 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:23.659]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:23.661 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:23.660]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700130506050403020110f39805010040000201008e0616</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_3</span>
+                <span style='color: #666;'>行号: 3</span>
+            </div>
+            
+2025-11-22 12:32:24.658 | WARNING  | utils.logger:warning:55 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 帧 3 (Frame_3) 执行超时</span>
+                <br>
+                <span style='color: #856404;'>超时时间: 1000ms</span>
+            </div>
+            
+2025-11-22 12:32:24.659 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:24.658]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681d001305060504030201107b8f0501004000020101020304050600d96516</span>
+            </div>
+            
+2025-11-22 12:32:24.660 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:25.662 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:25.661]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:25.663 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:25.662]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681d001305060504030201107b8f0501004000020101020304050600d96516</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_4</span>
+                <span style='color: #666;'>行号: 4</span>
+            </div>
+            
+2025-11-22 12:32:26.657 | WARNING  | utils.logger:warning:55 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 帧 4 (Frame_4) 执行超时</span>
+                <br>
+                <span style='color: #856404;'>超时时间: 1000ms</span>
+            </div>
+            
+2025-11-22 12:32:26.658 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:26.657]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:32:26.659 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:27.661 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:27.660]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:27.662 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:27.661]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700130506050403020110f39805010040000201008e0616</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_5</span>
+                <span style='color: #666;'>行号: 5</span>
+            </div>
+            
+2025-11-22 12:32:28.661 | WARNING  | utils.logger:warning:55 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 帧 5 (Frame_5) 执行超时</span>
+                <br>
+                <span style='color: #856404;'>超时时间: 1000ms</span>
+            </div>
+            
+2025-11-22 12:32:44.257 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:44.256]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f3980200004000020100550516</span>
+            </div>
+            
+2025-11-22 12:32:44.258 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:45.260 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:45.258]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:49.159 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:49.158]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f3980200004000020100550516</span>
+            </div>
+            
+2025-11-22 12:32:49.160 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:50.164 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:50.162]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:32:58.097 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:58.096]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f3980200004000020100550516</span>
+            </div>
+            
+2025-11-22 12:32:58.098 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:32:59.100 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:32:59.099]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:33:37.504 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:33:37.502]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>发送: 681700130506050403020110f39805010040000201008e0616</span>
+            </div>
+            
+2025-11-22 12:33:37.505 | WARNING  | utils.logger:warning:55 | 解析帧结构失败: non-hexadecimal number found in fromhex() arg at position 0
+2025-11-22 12:33:38.507 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2025-11-22 12:33:38.506]</span>
+                <span style='color: #2e7d32;'>RX:</span> 
+                <span style='font-family: Consolas, monospace;'>接收超时</span>
+            </div>
+            
+2025-11-22 12:33:57.659 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 已删除 1 个帧</span>
+            </div>
+            
+2025-11-22 12:34:01.217 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 已删除 1 个帧</span>
+            </div>
+            
+2025-11-22 12:34:05.600 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 已删除 1 个帧</span>
+            </div>
+            
+2025-11-22 12:34:08.930 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 已删除 1 个帧</span>
+            </div>
+            
+2025-11-22 12:34:13.499 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 已删除 1 个帧</span>
+            </div>
+            

@@ -1,0 +1,14 @@
+2025-04-15 19:10:50.098 | INFO     | utils.logger:info:52 | 应用程序启动
+2025-04-15 19:11:04.527 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-04-15 19:11:04.529 | INFO     | utils.logger:info:52 | 当前表格行数: 0
+2025-04-15 19:11:04.534 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-04-15 19:11:04.536 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-04-15 19:11:40.559 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2025-04-15 19:11:40.560 | INFO     | utils.logger:info:52 | 当前表格行数: 2
+2025-04-15 19:11:40.564 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2025-04-15 19:11:40.565 | ERROR    | utils.logger:error:58 | 创建帧数据失败
+2025-04-15 19:12:39.552 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 串口已断开连接</span>
+            </div>
+            

@@ -1,0 +1,47 @@
+2024-12-28 17:28:07.102 | INFO     | utils.logger:info:52 | 应用程序启动
+2024-12-28 17:28:22.230 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2024-12-28 17:28:22.231 | INFO     | utils.logger:info:52 | 当前表格行数: 0
+2024-12-28 17:28:22.236 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2024-12-28 17:28:22.239 | INFO     | utils.logger:info:52 | [SUCCESS] 帧数据创建成功: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:28:22.240 | INFO     | utils.logger:info:52 | 帧数据已保存: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:28:22.261 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 添加成功
+2024-12-28 17:28:27.656 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2024-12-28 17:28:30.333 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:28:30.591 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000200011c07e80c1c111c1e00003ad316
+2024-12-28 17:28:30.600 | INFO     | utils.logger:info:52 | 收到响应: 68
+2024-12-28 17:28:30.601 | INFO     | utils.logger:info:52 | 收到响应: 21
+2024-12-28 17:28:30.602 | INFO     | utils.logger:info:52 | 收到响应: 00c3
+2024-12-28 17:28:30.603 | INFO     | utils.logger:info:52 | 收到响应: 05
+2024-12-28 17:28:30.604 | INFO     | utils.logger:info:52 | 收到响应: 060504030201106b2385010040000200011c07e80c1c111c1e00003ad316
+2024-12-28 17:28:39.318 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:28:39.570 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000200011c07e80c1c111c2700008ac916
+2024-12-28 17:28:39.579 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b23850100
+2024-12-28 17:28:39.580 | INFO     | utils.logger:info:52 | 收到响应: 40000200011c07e80c1c111c2700008ac916
+2024-12-28 17:29:00.291 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:29:00.536 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000200011c07e80c1c111d0000000f5a16
+2024-12-28 17:29:00.834 | ERROR    | utils.logger:error:58 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>帧 Frame_1 匹配失败</span><br>
+                    <span style='font-family: monospace;'>实际数据: 682100C305060504030201106B2385010040000200011C07E80C1C11<span style="color: red;">1D</span><span style="color: red;">00</span>0000<span style="color: red;">0F</span><span style="color: red;">5A</span>16</span><br>
+                    <span style='font-family: monospace;'>期望规则: </span>
+                </div>
+                
+2024-12-28 17:29:00.840 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000200011c07e80c1c111d0000000f5a16
+2024-12-28 17:29:26.424 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:29:26.669 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000200011c07e80c1c111d1a0000e0ac16
+2024-12-28 17:29:26.671 | ERROR    | utils.logger:error:58 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>帧 Frame_1 匹配失败</span><br>
+                    <span style='font-family: monospace;'>实际数据: 682100C305060504030201106B2385010040000200011C07E80C1C11<span style="color: red;">1D</span><span style="color: red;">1A</span>0000E0AC16</span><br>
+                    <span style='font-family: monospace;'>期望规则: </span>
+                </div>
+                
+2024-12-28 17:29:26.679 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000200011c07e80c1c111d1a0000e0ac16
+2024-12-28 17:30:06.120 | INFO     | utils.logger:info:52 | 收到响应: 发送: 68170003050605040302011067670501004000020000561f16
+2024-12-28 17:30:06.347 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000200011c07e80c1c111e0600001ba916
+2024-12-28 17:30:06.349 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 匹配成功
+2024-12-28 17:30:06.355 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000200011c07e80c1c111e0600001ba916

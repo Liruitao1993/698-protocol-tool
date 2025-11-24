@@ -1,0 +1,45 @@
+2024-12-28 17:08:31.155 | INFO     | utils.logger:info:52 | 应用程序启动
+2024-12-28 17:08:43.017 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2024-12-28 17:08:43.018 | INFO     | utils.logger:info:52 | 当前表格行数: 0
+2024-12-28 17:08:43.021 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2024-12-28 17:08:43.022 | INFO     | utils.logger:info:52 | [SUCCESS] 帧数据创建成功: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:08:43.023 | INFO     | utils.logger:info:52 | 帧数据已保存: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:08:43.043 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 添加成功
+2024-12-28 17:08:55.706 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2024-12-28 17:09:10.052 | INFO     | utils.logger:info:52 | 开始发送所有帧
+2024-12-28 17:09:11.368 | INFO     | utils.logger:info:52 | 正在发送帧 1 (Frame_1)...
+2024-12-28 17:09:12.374 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 发送成功
+2024-12-28 17:09:12.403 | INFO     | utils.logger:info:52 | [SUCCESS] 发送完成: 成功 1 个, 失败 0 个
+2024-12-28 17:09:13.407 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2024-12-28 17:09:13.404]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700030506050403020110676705010040000201008e0616</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_1</span>
+                <span style='color: #666;'>行号: 1</span>
+            </div>
+            
+2024-12-28 17:11:58.027 | INFO     | utils.logger:info:52 | 开始发送所有帧
+2024-12-28 17:11:59.311 | INFO     | utils.logger:info:52 | 正在发送帧 1 (Frame_1)...
+2024-12-28 17:11:59.553 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 发送成功
+2024-12-28 17:11:59.566 | INFO     | utils.logger:info:52 | [SUCCESS] 发送完成: 成功 1 个, 失败 0 个
+2024-12-28 17:11:59.789 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
+                <span style='color: #666;'>[2024-12-28 17:11:59.787]</span>
+                <span style='color: #2e7d32;'>TX:</span> 
+                <span style='font-family: Consolas, monospace;'>681700030506050403020110676705010040000201008e0616</span>
+                <br>
+                <span style='color: #666;'>帧名称: Frame_1</span>
+                <span style='color: #666;'>行号: 1</span>
+            </div>
+            
+2024-12-28 17:13:34.080 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #fff3cd; padding: 5px; margin: 2px;'>
+                <span style='color: #856404;'>⚠ 串口已断开连接</span>
+            </div>
+            

@@ -1,0 +1,58 @@
+2024-12-28 17:17:21.453 | INFO     | utils.logger:info:52 | 应用程序启动
+2024-12-28 17:17:28.668 | INFO     | utils.logger:info:52 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2024-12-28 17:17:42.529 | INFO     | utils.logger:info:52 | 开始添加新帧...
+2024-12-28 17:17:42.530 | INFO     | utils.logger:info:52 | 当前表格行数: 0
+2024-12-28 17:17:42.535 | INFO     | utils.logger:info:52 | 开始创建帧数据...
+2024-12-28 17:17:42.556 | INFO     | utils.logger:info:52 | [SUCCESS] 帧数据创建成功: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:17:42.557 | INFO     | utils.logger:info:52 | 帧数据已保存: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:17:42.558 | INFO     | utils.logger:info:52 | [SUCCESS] 帧 Frame_1 添加成功
+2024-12-28 17:17:46.893 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:17:47.149 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c11112f0000920116
+2024-12-28 17:17:47.156 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000201011c07e80c1c11112f0000920116
+2024-12-28 17:18:02.621 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:18:02.855 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c11120200001bd816
+2024-12-28 17:18:02.861 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000201011c07e80c1c11120200001bd816
+2024-12-28 17:18:09.242 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:18:09.489 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c1112090000bdf116
+2024-12-28 17:18:09.491 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>发送帧错误: 'QWidget' object has no attribute 'currentText'</span>
+                </div>
+                
+2024-12-28 17:18:09.514 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000201011c07e80c1c1112090000bdf116
+2024-12-28 17:18:22.089 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:18:22.422 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c1112160000ef3e16
+2024-12-28 17:18:22.424 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>发送帧错误: 'QWidget' object has no attribute 'currentText'</span>
+                </div>
+                
+2024-12-28 17:18:22.488 | INFO     | utils.logger:info:52 | 收到响应: 68
+2024-12-28 17:18:22.490 | INFO     | utils.logger:info:52 | 收到响应: 21
+2024-12-28 17:18:22.491 | INFO     | utils.logger:info:52 | 收到响应: 00
+2024-12-28 17:18:22.491 | INFO     | utils.logger:info:52 | 收到响应: c305
+2024-12-28 17:18:22.492 | INFO     | utils.logger:info:52 | 收到响应: 06050403
+2024-12-28 17:18:22.493 | INFO     | utils.logger:info:52 | 收到响应: 0201
+2024-12-28 17:18:22.494 | INFO     | utils.logger:info:52 | 收到响应: 106b2385
+2024-12-28 17:18:22.495 | INFO     | utils.logger:info:52 | 收到响应: 010040
+2024-12-28 17:18:22.496 | INFO     | utils.logger:info:52 | 收到响应: 000201011c07e80c1c1112160000ef3e16
+2024-12-28 17:18:27.594 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:18:27.831 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c11121b000090c116
+2024-12-28 17:18:27.832 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>发送帧错误: 'QWidget' object has no attribute 'currentText'</span>
+                </div>
+                
+2024-12-28 17:18:27.842 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000201011c07e80c1c11121b000090c116
+2024-12-28 17:18:33.873 | INFO     | utils.logger:info:52 | 收到响应: 发送: 681700030506050403020110676705010040000201008e0616
+2024-12-28 17:18:34.123 | INFO     | utils.logger:info:52 | 收到响应: 接收: 682100c305060504030201106b2385010040000201011c07e80c1c111222000020db16
+2024-12-28 17:18:34.124 | INFO     | utils.logger:info:52 | 
+                <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
+                    <span style='color: #721c24;'>发送帧错误: 'QWidget' object has no attribute 'currentText'</span>
+                </div>
+                
+2024-12-28 17:18:34.131 | INFO     | utils.logger:info:52 | 收到响应: 682100c305060504030201106b2385010040000201011c07e80c1c111222000020db16
