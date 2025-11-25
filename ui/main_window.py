@@ -1,27 +1,26 @@
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                            QComboBox, QLineEdit, QPushButton, QLabel, 
                            QTableWidget, QTableWidgetItem, QGroupBox, QGridLayout, QSpinBox, QHeaderView,
                            QFileDialog, QMessageBox, QTextEdit, QCheckBox, QDockWidget, QScrollArea, 
-                           QActionGroup, QMenu, QAction, QDialog, QDialogButtonBox, QSizePolicy, QTabWidget)
-from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QTimer
-from PyQt5.QtGui import QRegExpValidator, QFont, QColor
-from PyQt5.QtCore import QRegExp
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+                           QMenu, QDialog, QDialogButtonBox, QSizePolicy, QTabWidget, QSplitter)
+from PySide6.QtCore import Qt, Signal, QEvent, QTimer
+from PySide6.QtGui import QRegularExpressionValidator, QFont, QColor, QActionGroup, QAction, QIntValidator
+from PySide6.QtCore import QRegularExpression
+from PySide6.QtWidgets import QApplication, QStyleFactory
 import configparser
 import os
 import csv
 from functools import partial
 import re
-from PyQt5.QtCore import QDateTime
+from PySide6.QtCore import QDateTime
 import json
 import serial.tools.list_ports
 import threading
 from utils.logger import Logger
 
 class MainWindow(QMainWindow):
-    frame_send_requested = pyqtSignal(tuple)  # (frame_name, row)
-    serial_connect_requested = pyqtSignal(dict)  # 添加串口连接请求信号
+    frame_send_requested = Signal(str, int)  # (frame_name, row)
+    serial_connect_requested = Signal(object)  # 添加串口连接请求信号
     
     def __init__(self):
         super().__init__()
@@ -58,13 +57,9 @@ class MainWindow(QMainWindow):
         
         # 加载配置（在UI初始化之后）
         self.load_serial_config()
-        self.load_theme_config()
         
-        # 应用样式
-        self.apply_styles()
-        
-        # 创建日志窗口
-        self.create_dockable_log_window()
+        # 不再需要创建停靠日志窗口，因为已经在init_ui中创建
+        # self.create_dockable_log_window()
         
         # 添加表格缩放功能
         self.table_zoom_factor = 1.0
@@ -75,11 +70,7 @@ class MainWindow(QMainWindow):
         self.port_update_timer.timeout.connect(self.update_port_list)
         self.port_update_timer.start(1000)
         
-        # 加载保存的主题
-        self.load_saved_theme()
-        
-        # 设置应用程序为 Fusion
-        QApplication.setStyle("Fusion")
+        # 使用PySide6原生默认风格
         
         # 设置全局边距
         self.setContentsMargins(10, 10, 10, 10)
@@ -161,41 +152,8 @@ class MainWindow(QMainWindow):
         """)
 
     def init_ui(self):
-        # 创建菜单栏
-        menubar = self.menuBar()
-        
-        # 创建视图菜单
-        self.view_menu = menubar.addMenu("视图")
-        
-        # 创建窗口显示子菜单
-        windows_menu = QMenu("窗口", self)
-        windows_menu.setObjectName("窗口")  # 设置对象名称
-        self.view_menu.addMenu(windows_menu)
-        
-        # 添加主题风格子菜单
-        style_menu = QMenu("主题风格", self)
-        style_menu.setObjectName("主题风格")  # 设置对象名称
-        self.view_menu.addMenu(style_menu)
-        
-        # 获取系统支持的所有样式
-        available_styles = QStyleFactory.keys()
-        
-        # 建样式选择动作组
-        style_group = QActionGroup(self)
-        style_group.setExclusive(True)  # 确保只能选择一个样式
-        
-        # 添加所有可用的样式
-        for style_name in available_styles:
-            style_action = QAction(style_name, self)
-            style_action.setCheckable(True)
-            style_action.setChecked(QApplication.style().objectName() == style_name)
-            style_action.triggered.connect(lambda checked, name=style_name: self.change_style(name))
-            style_group.addAction(style_action)
-            style_menu.addAction(style_action)
-        
-        # 保存子菜单的引用
-        self.windows_menu = windows_menu
-        self.style_menu = style_menu
+        # 使用PySide6原生默认风格，不创建主题菜单
+        pass
         
         # 先创建所有控件
         # 控制域控件
@@ -233,18 +191,21 @@ class MainWindow(QMainWindow):
             '广播地址(3)'
         ])
         
-        self.ext_logic_addr_combo = QComboBox()
-        self.ext_logic_addr_combo.addItems([
-            '无扩展逻辑地址(0)',
-            '有扩展逻辑地址(1)'
-        ])
+        # 服务器逻辑地址选择（根据协议：bit4和bit5组成逻辑地址）
+        # bit5=0, bit4=0 → 逻辑地址0
+        # bit5=0, bit4=1 → 逻辑地址1
+        # bit5=1 → 有扩展逻辑地址，地址值2-255
+        self.sa_logic_addr_combo = QComboBox()
+        self.sa_logic_addr_combo.addItems(['0', '1', '2-255(扩展)'])
+        self.sa_logic_addr_combo.currentTextChanged.connect(self.on_sa_logic_addr_changed)
         
-        self.logic_addr_flag_combo = QComboBox()
-        self.logic_addr_flag_combo.addItems([
-            '无逻辑地址(0)',
-            '有逻辑地址(1)'
-        ])
-        self.logic_addr_flag_combo.currentTextChanged.connect(self.on_logic_addr_flag_changed)
+        # 扩展逻辑地址输入框（当选择2-255时启用）
+        self.sa_ext_logic_input = QLineEdit()
+        self.sa_ext_logic_input.setPlaceholderText("输入2-255的十进制数")
+        self.sa_ext_logic_input.setText("2")  # 默认值
+        ext_logic_validator = QIntValidator(2, 255)
+        self.sa_ext_logic_input.setValidator(ext_logic_validator)
+        self.sa_ext_logic_input.setEnabled(False)  # 默认禁用
         
         # 修改地址长度为输入框
         self.addr_len_input = QLineEdit()
@@ -255,12 +216,6 @@ class MainWindow(QMainWindow):
         self.addr_len_input.setValidator(addr_len_validator)
         self.addr_len_input.setFixedWidth(60)  # 设置固定宽度
         self.addr_len_input.setAlignment(Qt.AlignCenter)  # 文本居中对齐
-
-        self.sa_logic_addr = QLineEdit()
-        self.sa_logic_addr.setPlaceholderText("如: 00")
-        hex_validator = QRegExpValidator(QRegExp("^[0-9A-Fa-f]{2}$"))
-        self.sa_logic_addr.setValidator(hex_validator)
-        self.sa_logic_addr.setEnabled(False)  # 默认禁用
 
         # 创建客户机地址CA输入框（十进制输入，范围0-255）
         self.logic_addr = QLineEdit()
@@ -273,34 +228,80 @@ class MainWindow(QMainWindow):
         self.comm_addr = QLineEdit()
         self.comm_addr.setText("010203040506")  # 设置默认值
         self.comm_addr.setPlaceholderText("如: 010203040506 (6字节)")
-        comm_addr_validator = QRegExpValidator(QRegExp("^[0-9A-Fa-f]{1,12}$"))
+        comm_addr_validator = QRegularExpressionValidator(QRegularExpression("^[0-9A-Fa-f]{1,12}$"))
         self.comm_addr.setValidator(comm_addr_validator)
         
         # 创建自定义数据输入框
         self.custom_data = QLineEdit()
         self.custom_data.setPlaceholderText("输入十六进制数据（可选）")
-        hex_validator = QRegExpValidator(QRegExp("^[0-9A-Fa-f]*$"))
+        hex_validator = QRegularExpressionValidator(QRegularExpression("^[0-9A-Fa-f]*$"))
         self.custom_data.setValidator(hex_validator)
         
-        # 创建SA逻辑地址输入框
-        self.sa_logic_addr = QLineEdit()
-        self.sa_logic_addr.setPlaceholderText("如: 00")
-        sa_logic_validator = QRegExpValidator(QRegExp("^[0-9A-Fa-f]{2}$"))
-        self.sa_logic_addr.setValidator(sa_logic_validator)
-        self.sa_logic_addr.setEnabled(False)  # 默认禁用
-        
-        # 创建服务类型和数据类型选择框
+        # 创建服务类型和数据类型选择框（按照DL/T 698.45协议定义）
         self.service_type_combo = QComboBox()
+        # 格式: 显示名称 (编码值)
         self.service_type_combo.addItems([
-            '建立应用连接请求',
-            '断开应用连接请求',
-            '读取请求',
-            '设置请求',
-            '操作请求',
-            '上报应答',
-            '代理请求'
+            'LINK-Request 建立应用连接请求 (1)',
+            'RELEASE-Request 断开应用连接请求 (3)',
+            'GET-Request 读取请求 (5)',
+            'SET-Request 设置请求 (6)',
+            'ACTION-Request 操作请求 (7)',
+            'REPORT-Response 上报应答 (8)',
+            'PROXY-Request 代理请求 (9)',
+            'COMPACT-GET-Request 简化读取请求 (133)',
+            'COMPACT-SET-Request 简化设置请求 (134)'
         ])
         self.service_type_combo.currentTextChanged.connect(self.on_service_type_changed)
+        
+        # 服务类型编码映射表
+        self.service_type_codes = {
+            'LINK-Request 建立应用连接请求 (1)': '01',
+            'RELEASE-Request 断开应用连接请求 (3)': '03',
+            'GET-Request 读取请求 (5)': '05',
+            'SET-Request 设置请求 (6)': '06',
+            'ACTION-Request 操作请求 (7)': '07',
+            'REPORT-Response 上报应答 (8)': '08',
+            'PROXY-Request 代理请求 (9)': '09',
+            'COMPACT-GET-Request 简化读取请求 (133)': '85',
+            'COMPACT-SET-Request 简化设置请求 (134)': '86'
+        }
+        
+        # 服务数据类型编码映射表
+        self.service_data_type_codes = {
+            # LINK-Request 建立应用连接请求
+            'CONNECT-Request 建立应用连接请求 [0]': '00',
+            # RELEASE-Request 断开应用连接请求
+            'RELEASE-Request 断开应用连接请求 [0]': '00',
+            # GET-Request 读取请求
+            'GetRequestNormal 读取一个对象属性 [1]': '01',
+            'GetRequestNormalList 读取若干个对象属性 [2]': '02',
+            'GetRequestRecord 读取一个记录型对象属性 [3]': '03',
+            'GetRequestRecordList 读取若干个记录型对象属性 [4]': '04',
+            'GetRequestNext 读取分帧传输的下一帧数据 [5]': '05',
+            'GetRequestMD5 读取一个对象属性的MD5值 [6]': '06',
+            # SET-Request 设置请求
+            'SetRequestNormal 设置一个对象属性 [1]': '01',
+            'SetRequestNormalList 设置若干个对象属性 [2]': '02',
+            'SetThenGetRequestNormalList 设置后读取若干个对象属性 [3]': '03',
+            # ACTION-Request 操作请求
+            'ActionRequestNormal 操作一个对象方法 [1]': '01',
+            'ActionRequestNormalList 操作若干个对象方法 [2]': '02',
+            'ActionThenGetRequestNormalList 操作后读取若干个对象属性 [3]': '03',
+            # REPORT-Response 上报应答
+            'ReportResponseRecord 上报一个记录型对象 [1]': '01',
+            'ReportResponseRecordList 上报若干个记录型对象 [2]': '02',
+            'ReportResponseTransData 上报透传的数据 [3]': '03',
+            # PROXY-Request 代理请求
+            'ProxyRequestGetList 代理读取若干个服务器的若干个对象属性 [1]': '01',
+            'ProxyRequestSetList 代理设置若干个服务器的若干个对象属性 [2]': '02',
+            'ProxyRequestActionList 代理操作若干个服务器的若干个对象方法 [3]': '03',
+            'ProxyRequestTransCommandList 代理透传若干个服务器的命令 [4]': '04',
+            'ProxyRequestGetTransData 代理读取若干个服务器的若干个透传对象 [5]': '05',
+            # COMPACT-GET-Request 简化读取请求
+            'CompactGetRequestNormal 简化读取一个对象属性 [1]': '01',
+            # COMPACT-SET-Request 简化设置请求
+            'CompactSetRequestNormal 简化设置一个对象属性 [1]': '01'
+        }
         
         self.service_data_type_combo = QComboBox()
         self.service_data_type_label = QLabel("数据类型:")
@@ -323,16 +324,38 @@ class MainWindow(QMainWindow):
         
         self.oad_input = QLineEdit()
         self.oad_input.setPlaceholderText("输入OAD值（4字节十六进制）")
-        oad_validator = QRegExpValidator(QRegExp("^[0-9A-Fa-f]{8}$"))
+        oad_validator = QRegularExpressionValidator(QRegularExpression("^[0-9A-Fa-f]{8}$"))
         self.oad_input.setValidator(oad_validator)
         
         
-        # 创建主布局
+        # 创建主布局（水平分割：左侧配置面板 + 右侧主区域）
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(8)
-        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # 使用QSplitter实现可拖拽的分割线
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.setHandleWidth(4)  # 设置分割线宽度
+        splitter.setStyleSheet("""
+            QSplitter::handle {
+                background-color: #cccccc;
+            }
+            QSplitter::handle:hover {
+                background-color: #999999;
+            }
+        """)
+        
+        # ========== 左侧：配置面板 ==========
+        self.create_protocol_config_panel()
+        splitter.addWidget(self.protocol_config_panel)
+        
+        # ========== 右侧：主工作区域 ==========
+        right_widget = QWidget()
+        right_layout = QVBoxLayout(right_widget)
+        right_layout.setSpacing(8)
+        right_layout.setContentsMargins(10, 10, 10, 10)
 
         # 串口设置区域
         serial_group = QGroupBox("串口设置")
@@ -388,10 +411,7 @@ class MainWindow(QMainWindow):
         serial_layout.addStretch()
         serial_group.setLayout(serial_layout)
         serial_group.setFixedHeight(60)  # 减小高度
-        main_layout.addWidget(serial_group)
-
-        # 创建协议配置的停靠口
-        self.create_protocol_config_window()
+        right_layout.addWidget(serial_group)  # 添加到右侧布局
 
         # 帧列表区域（主窗中心）
         frame_group = QGroupBox("帧列表")
@@ -412,16 +432,16 @@ class MainWindow(QMainWindow):
         
         # 设置各列的默认宽度和调整模式
         column_widths = {
-            0: (40, QHeaderView.Fixed),              # 序号列
-            1: (100, QHeaderView.Interactive),       # 名称列
-            2: (300, QHeaderView.Interactive),       # 帧内容列
-            3: (150, QHeaderView.Fixed),             # 操作列
-            4: (80, QHeaderView.Fixed),              # 状态列
-            5: (80, QHeaderView.Fixed),              # 启用匹配列
-            6: (300, QHeaderView.Interactive),       # 匹配规则列
-            7: (80, QHeaderView.Fixed),              # 匹配模式列
-            8: (100, QHeaderView.Interactive),       # 测试结果列
-            9: (80, QHeaderView.Fixed)               # 超时列
+            0: (40, QHeaderView.ResizeMode.Fixed),              # 序号列
+            1: (100, QHeaderView.ResizeMode.Interactive),       # 名称列
+            2: (300, QHeaderView.ResizeMode.Interactive),       # 帧内容列
+            3: (150, QHeaderView.ResizeMode.Fixed),             # 操作列
+            4: (80, QHeaderView.ResizeMode.Fixed),              # 状态列
+            5: (80, QHeaderView.ResizeMode.Fixed),              # 启用匹配列
+            6: (300, QHeaderView.ResizeMode.Interactive),       # 匹配规则列
+            7: (80, QHeaderView.ResizeMode.Fixed),              # 匹配模式列
+            8: (100, QHeaderView.ResizeMode.Interactive),       # 测试结果列
+            9: (80, QHeaderView.ResizeMode.Fixed)               # 超时列
         }
         
         # 应用列宽设置
@@ -442,32 +462,25 @@ class MainWindow(QMainWindow):
         self.frame_table.setAlternatingRowColors(True)  # 交替行颜色
         self.frame_table.verticalHeader().setVisible(False)  # 隐藏垂直表头
         
-        # 设置表格内容的对齐方式
+        # 设置表格内容的对齐方式 - 使用原生样式
         self.frame_table.setStyleSheet("""
             QTableWidget::item {
                 padding: 5px;
+                text-align: center;
             }
             QTableWidget QLineEdit {
                 padding: 2px;
-            }
-            /* 设置表格内容居中对齐 */
-            QTableWidget::item {
                 text-align: center;
             }
-            /* 设置表头样式 */
-            QHeaderView::section {
-                background-color: #f0f0f0;
-                padding: 5px;
-                border: none;
-                border-right: 1px solid #d0d0d0;
-                border-bottom: 1px solid #d0d0d0;
+            QTableWidget QComboBox {
+                text-align: center;
             }
         """)
         
         frame_layout.addWidget(self.frame_table)
         
         frame_group.setLayout(frame_layout)
-        main_layout.addWidget(frame_group, 1)  # 让帧列表占主要间
+        right_layout.addWidget(frame_group, 1)  # 让帧列表占主要空间，添加到右侧布局
 
         # 底部操作组
         button_group = QGroupBox("操作")
@@ -541,40 +554,45 @@ class MainWindow(QMainWindow):
         button_group.setLayout(button_layout)
         button_group.setFixedHeight(60)  # 固定操作组的高度
         
-        # 设置操作组的样式
-        button_group.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid #CCCCCC;
-                border-radius: 3px;
-                margin-top: 5px;
-                font-family: 黑体;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 3px;
-            }
-            QPushButton {
-                background-color: #F0F0F0;
-                border: 1px solid #CCCCCC;
-                border-radius: 3px;
-            }
-            QPushButton:hover {
-                background-color: #E5E5E5;
-                border-color: #BBBBBB;
-            }
-            QPushButton:pressed {
-                background-color: #D5D5D5;
-                border-color: #AAAAAA;
-            }
-            QSpinBox {
-                border: 1px solid #CCCCCC;
-                border-radius: 3px;
-                padding: 2px;
+        # 移除操作组的自定义样式，使用原生样式
+        
+        right_layout.addWidget(button_group)  # 添加到右侧布局
+        
+        # ========== 日志输出区域 ==========
+        log_group = QGroupBox("📝 日志输出")
+        log_layout = QVBoxLayout()
+        log_layout.setSpacing(5)
+        log_layout.setContentsMargins(10, 10, 10, 10)
+        
+        # 创建日志文本框
+        self.receive_display = QTextEdit()
+        self.receive_display.setReadOnly(True)
+        self.receive_display.setMinimumHeight(200)  # 设置最小高度
+        self.receive_display.setStyleSheet("""
+            QTextEdit {
+                background-color: #ffffff;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 5px;
+                font-family: 'Consolas', 'Courier New', monospace;
+                font-size: 9pt;
             }
         """)
+        log_layout.addWidget(self.receive_display)
         
-        main_layout.addWidget(button_group)
+        log_group.setLayout(log_layout)
+        right_layout.addWidget(log_group)  # 添加到右侧布局
+        
+        # 将右侧区域添加到splitter
+        splitter.addWidget(right_widget)
+        
+        # 设置初始分割比例：左侧420px，右侧占据剩余空间
+        splitter.setStretchFactor(0, 0)  # 左侧不伸缩
+        splitter.setStretchFactor(1, 1)  # 右侧可以伸缩
+        splitter.setSizes([420, 800])  # 设置初始宽度
+        
+        # 将splitter添加到主布局
+        main_layout.addWidget(splitter)
 
         # 连接单格变化信号
         self.frame_table.cellChanged.connect(self.on_cell_changed)
@@ -584,18 +602,11 @@ class MainWindow(QMainWindow):
         # 添加属性来存储原始名称
         self.editing_frame_name = None
 
-        # 创建主题菜单
-        theme_menu = self.view_menu.addMenu("主题设置")
-        
-        # 添加主题配置动作
-        theme_config_action = QAction("主题配置...", self)
-        theme_config_action.triggered.connect(self.show_theme_dialog)
-        theme_menu.addAction(theme_config_action)
 
         # 设置所有下拉框的大小策略
         for combo in [self.dir_combo, self.prm_combo, self.split_combo, 
                      self.sc_combo, self.func_combo, self.addr_type_combo,
-                     self.ext_logic_addr_combo, self.logic_addr_flag_combo]:
+                     self.sa_logic_addr_combo]:
             combo.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
             combo.setFixedHeight(20)
         
@@ -643,11 +654,13 @@ class MainWindow(QMainWindow):
         self.fail_count = 0
         self.timeout_count = 0
 
-    def on_logic_addr_flag_changed(self, text):
-        """处理辑地址标志改变事件"""
-        self.sa_logic_addr.setEnabled(text == '有逻辑地址(1)')
-        if text == '无逻辑地址(0)':
-            self.sa_logic_addr.clear()
+    def on_sa_logic_addr_changed(self, text):
+        """处理SA逻辑地址改变事件（根据协议：bit4和bit5组成逻辑地址）"""
+        # 选择2-255时启用扩展逻辑地址输入框
+        self.sa_ext_logic_input.setEnabled(text == '2-255(扩展)')
+        if text != '2-255(扩展)':
+            self.sa_ext_logic_input.clear()
+            self.sa_ext_logic_input.setText("2")  # 恢复默认值
 
     def on_addr_len_changed(self, text):
         """处理地址长度变化事件"""
@@ -716,6 +729,498 @@ class MainWindow(QMainWindow):
         except Exception as e:
             print(f"OAD更新错误: {e}")
 
+    def update_composite_elements(self, count):
+        """更新复合类型（Array/Structure）的元素输入控件"""
+        # 清空现有元素
+        while self.elements_layout.count():
+            child = self.elements_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        self.element_inputs = []
+        
+        # 常用数据类型列表（用于元素类型选择）
+        common_types = [
+            'Bool(3)',
+            'DoubleLong(5)',
+            'DoubleLongUnsigned(6)',
+            'OctetString(9)',
+            'Integer(15)',
+            'Long(16)',
+            'Unsigned(17)',
+            'LongUnsigned(18)',
+            'Enum(22)',
+            'OAD(45)',
+            'OI(80)'
+        ]
+        
+        # 为每个元素创建输入控件
+        for i in range(count):
+            # 元素容器
+            element_group = QGroupBox(f"元素 {i+1}")
+            element_group.setStyleSheet("""
+                QGroupBox {
+                    font-size: 9pt;
+                    padding: 3px;
+                    margin-top: 8px;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 7px;
+                    padding: 0 3px;
+                }
+            """)
+            element_layout = QVBoxLayout()
+            element_layout.setSpacing(3)  # 减小间距从5到3
+            element_layout.setContentsMargins(5, 8, 5, 5)  # 调整边距
+            
+            # 类型选择
+            type_layout = QHBoxLayout()
+            type_layout.setSpacing(5)  # 设置合理间距
+            type_label = QLabel("类型:")
+            type_label.setFixedWidth(40)  # 固定标签宽度避免重叠
+            type_label.setStyleSheet("font-size: 9pt;")
+            type_layout.addWidget(type_label)
+            type_combo = QComboBox()
+            type_combo.addItems(common_types)
+            type_combo.setCurrentIndex(0)  # 默认Bool类型
+            type_combo.setFixedHeight(22)  # 减小下拉框高度
+            type_combo.setStyleSheet("font-size: 9pt;")
+            type_layout.addWidget(type_combo, 1)
+            element_layout.addLayout(type_layout)
+            
+            # 值输入（动态变化）
+            value_widget = QWidget()
+            value_layout = QVBoxLayout(value_widget)
+            value_layout.setSpacing(2)  # 减小间距从3到2
+            value_layout.setContentsMargins(0, 0, 0, 0)
+            element_layout.addWidget(value_widget)
+            
+            # 连接类型变化信号
+            type_combo.currentTextChanged.connect(
+                lambda text, widget=value_widget, layout=value_layout: 
+                self.update_element_value_input(text, widget, layout)
+            )
+            
+            element_group.setLayout(element_layout)
+            self.elements_layout.addWidget(element_group)
+            
+            # 存储元素信息
+            self.element_inputs.append({
+                'type_combo': type_combo,
+                'value_widget': value_widget,
+                'value_layout': value_layout
+            })
+            
+            # 初始化默认值输入
+            self.update_element_value_input(type_combo.currentText(), value_widget, value_layout)
+
+    def update_element_value_input(self, data_type, value_widget, value_layout):
+        """更新元素的值输入控件"""
+        # 清空现有控件
+        while value_layout.count():
+            child = value_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        if not data_type:
+            return
+        
+        type_code = data_type.split('(')[1].rstrip(')')
+        
+        # 根据类型创建相应的输入控件
+        value_layout_h = QHBoxLayout()
+        value_layout_h.setSpacing(5)  # 设置合理间距
+        value_label = QLabel("值:")
+        value_label.setFixedWidth(40)  # 固定标签宽度避免重叠
+        value_label.setStyleSheet("font-size: 9pt;")
+        value_layout_h.addWidget(value_label)
+        
+        if type_code == '3':  # Bool
+            value_input = QComboBox()
+            value_input.addItems(['False(00)', 'True(01)'])
+            value_input.setFixedHeight(22)  # 减小高度
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('bool_combo')
+        elif type_code in ['5', '6']:  # DoubleLong, DoubleLongUnsigned
+            value_input = QLineEdit()
+            value_input.setPlaceholderText("10进制数")
+            value_input.setText("0")
+            value_input.setFixedHeight(22)  # 减小高度
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('int_input')
+        elif type_code == '9':  # OctetString
+            value_input = QLineEdit()
+            value_input.setPlaceholderText("HEX: 01 02 03")
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('hex_input')
+        elif type_code in ['15', '17']:  # Integer, Unsigned (1字节)
+            value_input = QSpinBox()
+            if type_code == '15':
+                value_input.setRange(-128, 127)
+            else:
+                value_input.setRange(0, 255)
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('byte_spin')
+        elif type_code in ['16', '18']:  # Long, LongUnsigned (2字节)
+            value_input = QLineEdit()
+            if type_code == '16':
+                value_input.setPlaceholderText("-32768~32767")
+            else:
+                value_input.setPlaceholderText("0~65535")
+            value_input.setText("0")
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('int_input')
+        elif type_code == '22':  # Enum
+            value_input = QSpinBox()
+            value_input.setRange(0, 255)
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('byte_spin')
+        elif type_code == '45':  # OAD
+            value_input = QLineEdit()
+            value_input.setPlaceholderText("HEX: 40000200")
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('oad_input')
+        elif type_code == '80':  # OI
+            value_input = QLineEdit()
+            value_input.setPlaceholderText("HEX: 4000")
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('oi_input')
+        else:
+            value_input = QLineEdit()
+            value_input.setPlaceholderText("输入值")
+            value_input.setFixedHeight(22)
+            value_input.setStyleSheet("font-size: 9pt;")
+            value_input.setObjectName('generic_input')
+        
+        value_layout_h.addWidget(value_input, 1)
+        value_layout.addLayout(value_layout_h)
+        
+        # 将输入控件存储到value_widget的属性中，供后续读取
+        value_widget.setProperty('value_input', value_input)
+
+    def on_data_type_changed(self, data_type):
+        """数据类型变化时更新参数输入区域"""
+        # 清空现有的参数输入控件
+        while self.param_input_layout.count():
+            child = self.param_input_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        if not data_type:
+            return
+        
+        type_code = data_type.split('(')[1].rstrip(')')
+        
+        # 根据不同类型添加相应的输入控件
+        if type_code == '0':  # NullData
+            label = QLabel("提示: NULL类型无需参数")
+            label.setStyleSheet("color: #666; font-style: italic; font-size: 9pt;")
+            self.param_input_layout.addWidget(label)
+            
+        elif type_code in ['1', '2']:  # Array, Structure
+            # 复合类型，需要长度参数
+            len_layout = QHBoxLayout()
+            len_layout.setSpacing(5)
+            len_label = QLabel("元素个数:")
+            len_label.setFixedWidth(60)
+            len_label.setStyleSheet("font-size: 9pt;")
+            len_layout.addWidget(len_label)
+            self.data_len_input = QSpinBox()
+            self.data_len_input.setRange(0, 10)  # 限制最大9个元素，避免界面过长
+            self.data_len_input.setValue(2)
+            self.data_len_input.setFixedHeight(22)
+            self.data_len_input.setStyleSheet("font-size: 9pt;")
+            self.data_len_input.valueChanged.connect(self.update_composite_elements)
+            len_layout.addWidget(self.data_len_input, 1)
+            self.param_input_layout.addLayout(len_layout)
+            
+            # 创建元素定义区域容器
+            self.elements_container = QWidget()
+            self.elements_layout = QVBoxLayout(self.elements_container)
+            self.elements_layout.setSpacing(4)  # 减小间距从5到4
+            self.elements_layout.setContentsMargins(0, 3, 0, 0)  # 减小边距
+            self.param_input_layout.addWidget(self.elements_container)
+            
+            # 初始化元素输入
+            self.element_inputs = []  # 存储每个元素的输入控件
+            self.update_composite_elements(2)  # 默认2个元素
+            
+        elif type_code == '3':  # Bool
+            bool_layout = QHBoxLayout()
+            bool_layout.setSpacing(5)
+            bool_label = QLabel("值:")
+            bool_label.setFixedWidth(60)
+            bool_label.setStyleSheet("font-size: 9pt;")
+            bool_layout.addWidget(bool_label)
+            self.bool_value_combo = QComboBox()
+            self.bool_value_combo.addItems(['False(00)', 'True(01)'])
+            self.bool_value_combo.setFixedHeight(22)
+            self.bool_value_combo.setStyleSheet("font-size: 9pt;")
+            bool_layout.addWidget(self.bool_value_combo, 1)
+            self.param_input_layout.addLayout(bool_layout)
+            
+        elif type_code == '4':  # BitString
+            # 位串长度
+            len_layout = QHBoxLayout()
+            len_layout.setSpacing(5)
+            len_label = QLabel("位数:")
+            len_label.setFixedWidth(60)
+            len_label.setStyleSheet("font-size: 9pt;")
+            len_layout.addWidget(len_label)
+            self.bitstring_len_input = QSpinBox()
+            self.bitstring_len_input.setRange(1, 255)
+            self.bitstring_len_input.setValue(8)
+            self.bitstring_len_input.setFixedHeight(22)
+            self.bitstring_len_input.setStyleSheet("font-size: 9pt;")
+            len_layout.addWidget(self.bitstring_len_input, 1)
+            self.param_input_layout.addLayout(len_layout)
+            
+            # 值输入
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("值(HEX):")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.bitstring_value_input = QLineEdit()
+            self.bitstring_value_input.setPlaceholderText("例: FF")
+            self.bitstring_value_input.setFixedHeight(22)
+            self.bitstring_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.bitstring_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code in ['5', '6']:  # DoubleLong, DoubleLongUnsigned
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("值:")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.double_long_input = QLineEdit()
+            self.double_long_input.setPlaceholderText("输入10进制数, 例: 1000")
+            self.double_long_input.setFixedHeight(22)
+            self.double_long_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.double_long_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code in ['9', '10', '12']:  # OctetString, VisibleString, Utf8String
+            # 字符串/字节串输入
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            if type_code == '9':
+                value_label = QLabel("字节串(HEX):")
+                value_label.setFixedWidth(80)
+                value_label.setStyleSheet("font-size: 9pt;")
+                value_layout.addWidget(value_label)
+                self.string_value_input = QLineEdit()
+                self.string_value_input.setPlaceholderText("例: 01 02 03 04")
+            else:
+                value_label = QLabel("字符串:")
+                value_label.setFixedWidth(60)
+                value_label.setStyleSheet("font-size: 9pt;")
+                value_layout.addWidget(value_label)
+                self.string_value_input = QLineEdit()
+                self.string_value_input.setPlaceholderText("例: HELLO")
+            self.string_value_input.setFixedHeight(22)
+            self.string_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.string_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code in ['15', '17']:  # Integer, Unsigned (1字节)
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("值:")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.byte_value_input = QSpinBox()
+            if type_code == '15':  # Integer
+                self.byte_value_input.setRange(-128, 127)
+            else:  # Unsigned
+                self.byte_value_input.setRange(0, 255)
+            self.byte_value_input.setFixedHeight(22)
+            self.byte_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.byte_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code in ['16', '18']:  # Long, LongUnsigned (2字节)
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("值:")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.word_value_input = QLineEdit()
+            if type_code == '16':
+                self.word_value_input.setPlaceholderText("范围: -32768~32767")
+            else:
+                self.word_value_input.setPlaceholderText("范围: 0~65535")
+            self.word_value_input.setFixedHeight(22)
+            self.word_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.word_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code == '22':  # Enum
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("枚举值:")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.enum_value_input = QSpinBox()
+            self.enum_value_input.setRange(0, 255)
+            self.enum_value_input.setFixedHeight(22)
+            self.enum_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.enum_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code in ['23', '24']:  # Float32, Float64
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("浮点数:")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.float_value_input = QLineEdit()
+            self.float_value_input.setPlaceholderText("例: 3.14159")
+            self.float_value_input.setFixedHeight(22)
+            self.float_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.float_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code == '45':  # OAD
+            # OAD输入 (4字节)
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("OAD(HEX):")
+            value_label.setFixedWidth(70)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.oad_value_input = QLineEdit()
+            self.oad_value_input.setPlaceholderText("例: 40000200")
+            self.oad_value_input.setFixedHeight(22)
+            self.oad_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.oad_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        elif type_code == '80':  # OI
+            # OI输入 (2字节)
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("OI(HEX):")
+            value_label.setFixedWidth(60)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.oi_value_input = QLineEdit()
+            self.oi_value_input.setPlaceholderText("例: 4000")
+            self.oi_value_input.setFixedHeight(22)
+            self.oi_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.oi_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+            
+        else:
+            # 其他类型，提供通用HEX输入
+            value_layout = QHBoxLayout()
+            value_layout.setSpacing(5)
+            value_label = QLabel("数据(HEX):")
+            value_label.setFixedWidth(70)
+            value_label.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(value_label)
+            self.generic_value_input = QLineEdit()
+            self.generic_value_input.setPlaceholderText("输入16进制数据")
+            self.generic_value_input.setFixedHeight(22)
+            self.generic_value_input.setStyleSheet("font-size: 9pt;")
+            value_layout.addWidget(self.generic_value_input, 1)
+            self.param_input_layout.addLayout(value_layout)
+
+    def generate_element_data(self, type_code, value_input):
+        """生成单个元素的数据"""
+        try:
+            if type_code == '3':  # Bool
+                value = 1 if 'True' in value_input.currentText() else 0
+                return f"03 {value:02X}"
+                
+            elif type_code == '5':  # DoubleLong
+                value = int(value_input.text() or "0")
+                if value < 0:
+                    value = (1 << 32) + value
+                # 生成完整的十六进制字符串，然后按每2位切分
+                hex_value = f"{value:08X}"  # 8位十六进制
+                hex_bytes = ' '.join([hex_value[i:i+2] for i in range(0, len(hex_value), 2)])
+                return f"05 {hex_bytes}"
+                
+            elif type_code == '6':  # DoubleLongUnsigned
+                value = int(value_input.text() or "0")
+                hex_value = f"{value:08X}"
+                hex_bytes = ' '.join([hex_value[i:i+2] for i in range(0, len(hex_value), 2)])
+                return f"06 {hex_bytes}"
+                
+            elif type_code == '9':  # OctetString
+                value_hex = value_input.text().strip().replace(' ', '')
+                if value_hex:
+                    length = len(value_hex) // 2
+                    # 确保字节串按每2位切分
+                    hex_bytes = ' '.join([value_hex[i:i+2] for i in range(0, len(value_hex), 2)])
+                    return f"09 {length:02X} {hex_bytes}"
+                else:
+                    return "09 00"
+                    
+            elif type_code == '15':  # Integer
+                value = value_input.value()
+                if value < 0:
+                    value = 256 + value
+                return f"0F {value:02X}"
+                
+            elif type_code == '16':  # Long
+                value = int(value_input.text() or "0")
+                if value < 0:
+                    value = 65536 + value
+                hex_value = f"{value:04X}"
+                hex_bytes = ' '.join([hex_value[i:i+2] for i in range(0, len(hex_value), 2)])
+                return f"10 {hex_bytes}"
+                
+            elif type_code == '17':  # Unsigned
+                value = value_input.value()
+                return f"11 {value:02X}"
+                
+            elif type_code == '18':  # LongUnsigned
+                value = int(value_input.text() or "0")
+                hex_value = f"{value:04X}"
+                hex_bytes = ' '.join([hex_value[i:i+2] for i in range(0, len(hex_value), 2)])
+                return f"12 {hex_bytes}"
+                
+            elif type_code == '22':  # Enum
+                value = value_input.value()
+                return f"16 {value:02X}"
+                
+            elif type_code == '45':  # OAD
+                value_hex = value_input.text().strip().replace(' ', '')
+                if len(value_hex) == 8:
+                    hex_bytes = ' '.join([value_hex[i:i+2] for i in range(0, len(value_hex), 2)])
+                    return f"2D {hex_bytes}"
+                else:
+                    return "2D 40 00 02 00"
+                    
+            elif type_code == '80':  # OI
+                value_hex = value_input.text().strip().replace(' ', '')
+                if len(value_hex) == 4:
+                    hex_bytes = ' '.join([value_hex[i:i+2] for i in range(0, len(value_hex), 2)])
+                    return f"50 {hex_bytes}"
+                else:
+                    return "50 40 00"
+            else:
+                return f"{type_code} 00"
+        except Exception as e:
+            self.append_log(f"元素数据生成错误: {str(e)}", "error")
+            return f"{type_code} 00"
+
     def generate_data(self):
         """生成数据"""
         try:
@@ -723,78 +1228,222 @@ class MainWindow(QMainWindow):
             
             # 根据数据类型生成示例数据
             type_code = data_type.split('(')[1].rstrip(')')
+            generated_data = ""
             
-            # 生成示例数据
+            # 生成数据，根据用户输入的参数
             if type_code == '0':  # NullData
                 generated_data = "00"  # NULL类型
+                
             elif type_code == '1':  # Array
-                generated_data = "01 02 05 00 00 00 0A 06 00 00 00 14"  # 示例数组
+                # 复合类型，需要包含长度
+                try:
+                    length = len(self.element_inputs)
+                    # 格式: 类型码 + 元素个数 + 元素内容
+                    generated_data = f"01 {length:02X}"
+                    
+                    # 读取每个元素的类型和值
+                    for elem in self.element_inputs:
+                        elem_type = elem['type_combo'].currentText()
+                        elem_type_code = elem_type.split('(')[1].rstrip(')')
+                        elem_value_input = elem['value_widget'].property('value_input')
+                        
+                        # 生成元素数据
+                        elem_data = self.generate_element_data(elem_type_code, elem_value_input)
+                        generated_data += f" {elem_data}"
+                except Exception as e:
+                    self.append_log(f"Array生成错误: {str(e)}", "error")
+                    generated_data = "01 02 06 00 00 00 00 06 00 00 00 01"  # 默认礧2个元素
+                    
             elif type_code == '2':  # Structure
-                generated_data = "02 02 05 00 00 00 01 06 00 00 00 02"  # 示例结构
+                # 复合类型，需要包含长度
+                try:
+                    length = len(self.element_inputs)
+                    # 格式: 类型码 + 元素个数 + 元素内容
+                    generated_data = f"02 {length:02X}"
+                    
+                    # 读取每个元素的类型和值
+                    for elem in self.element_inputs:
+                        elem_type = elem['type_combo'].currentText()
+                        elem_type_code = elem_type.split('(')[1].rstrip(')')
+                        elem_value_input = elem['value_widget'].property('value_input')
+                        
+                        # 生成元素数据
+                        elem_data = self.generate_element_data(elem_type_code, elem_value_input)
+                        generated_data += f" {elem_data}"
+                except Exception as e:
+                    self.append_log(f"Structure生成错误: {str(e)}", "error")
+                    generated_data = "02 02 11 00 12 00 01"  # 默认礧2个元素
+                    
             elif type_code == '3':  # Bool
-                generated_data = "03 01"  # True
+                # 基本类型，不需要长度，只需要值
+                try:
+                    value = 1 if 'True' in self.bool_value_combo.currentText() else 0
+                    generated_data = f"03 {value:02X}"
+                except:
+                    generated_data = "03 00"  # 默认False
+                    
             elif type_code == '4':  # BitString
-                generated_data = "04 08 FF"  # 8位bit串
+                # 需要长度参数
+                try:
+                    bit_len = self.bitstring_len_input.value()
+                    value_hex = self.bitstring_value_input.text().strip().replace(' ', '')
+                    if not value_hex:
+                        value_hex = "FF"
+                    generated_data = f"04 {bit_len:02X} {value_hex}"
+                except:
+                    generated_data = "04 08 FF"  # 默认8位
+                    
             elif type_code == '5':  # DoubleLong
-                generated_data = "05 00 00 00 00"  # 0
+                # 基本类型，不需要长度，直接是4字节值
+                try:
+                    value = int(self.double_long_input.text())
+                    # 转换为带符号4字节
+                    if value < 0:
+                        value = (1 << 32) + value
+                    generated_data = f"05 {value:08X}"
+                    # 插入空格
+                    generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                except:
+                    generated_data = "05 00 00 00 00"
+                    
             elif type_code == '6':  # DoubleLongUnsigned
-                generated_data = "06 00 00 00 00"  # 0
+                # 基本类型，不需要长度
+                try:
+                    value = int(self.double_long_input.text())
+                    generated_data = f"06 {value:08X}"
+                    generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                except:
+                    generated_data = "06 00 00 00 00"
+                    
             elif type_code == '9':  # OctetString
-                generated_data = "09 06 01 02 03 04 05 06"  # 6字节示例
-            elif type_code == '10':  # VisibleString
-                generated_data = "0A 05 48 45 4C 4C 4F"  # "HELLO"
-            elif type_code == '12':  # Utf8String
-                generated_data = "0C 05 48 45 4C 4C 4F"  # "HELLO"
-            elif type_code == '15':  # Integer
-                generated_data = "0F 00"  # 0
-            elif type_code == '16':  # Long
-                generated_data = "10 00 00"  # 0
-            elif type_code == '17':  # Unsigned
-                generated_data = "11 00"  # 0
-            elif type_code == '18':  # LongUnsigned
-                generated_data = "12 00 00"  # 0
+                # 需要长度参数
+                try:
+                    value_hex = self.string_value_input.text().strip().replace(' ', '')
+                    if value_hex:
+                        length = len(value_hex) // 2
+                        generated_data = f"09 {length:02X} {value_hex}"
+                        generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                    else:
+                        generated_data = "09 00"  # 空字节串
+                except:
+                    generated_data = "09 04 01 02 03 04"
+                    
+            elif type_code in ['10', '12']:  # VisibleString, Utf8String
+                # 需要长度参数
+                try:
+                    text = self.string_value_input.text().strip()
+                    if text:
+                        # 转换为HEX
+                        hex_str = ' '.join([f"{ord(c):02X}" for c in text])
+                        length = len(text)
+                        type_prefix = '0A' if type_code == '10' else '0C'
+                        generated_data = f"{type_prefix} {length:02X} {hex_str}"
+                    else:
+                        type_prefix = '0A' if type_code == '10' else '0C'
+                        generated_data = f"{type_prefix} 00"  # 空字符串
+                except:
+                    type_prefix = '0A' if type_code == '10' else '0C'
+                    generated_data = f"{type_prefix} 05 48 45 4C 4C 4F"  # "HELLO"
+                    
+            elif type_code == '15':  # Integer (1字节)
+                # 基本类型，不需要长度
+                try:
+                    value = self.byte_value_input.value()
+                    if value < 0:
+                        value = 256 + value
+                    generated_data = f"0F {value:02X}"
+                except:
+                    generated_data = "0F 00"
+                    
+            elif type_code == '16':  # Long (2字节)
+                # 基本类型，不需要长度
+                try:
+                    value = int(self.word_value_input.text())
+                    if value < 0:
+                        value = 65536 + value
+                    generated_data = f"10 {value:04X}"
+                    generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                except:
+                    generated_data = "10 00 00"
+                    
+            elif type_code == '17':  # Unsigned (1字节)
+                # 基本类型，不需要长度
+                try:
+                    value = self.byte_value_input.value()
+                    generated_data = f"11 {value:02X}"
+                except:
+                    generated_data = "11 00"
+                    
+            elif type_code == '18':  # LongUnsigned (2字节)
+                # 基本类型，不需要长度
+                try:
+                    value = int(self.word_value_input.text())
+                    generated_data = f"12 {value:04X}"
+                    generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                except:
+                    generated_data = "12 00 00"
+                    
             elif type_code == '22':  # Enum
-                generated_data = "16 00"  # 0
-            elif type_code == '23':  # Float32
-                generated_data = "17 00 00 00 00"  # 0.0
-            elif type_code == '24':  # Float64
-                generated_data = "18 00 00 00 00 00 00 00 00"  # 0.0
-            elif type_code == '25':  # DateTime
-                generated_data = "19 07 E7 0B 16 0E 1E 00 FF FF FF"  # 示例日期时间
-            elif type_code == '26':  # Date
-                generated_data = "1A 05 07 E7 0B 16 06"  # 示例日期
-            elif type_code == '27':  # Time
-                generated_data = "1B 04 0E 1E 00 FF"  # 示例时间
-            elif type_code == '28':  # DateTimeS
-                generated_data = "1C 0C 07 E7 0B 16 0E 1E 00 FF 80 00 FF FF"  # 示例
+                # 基本类型，不需要长度
+                try:
+                    value = self.enum_value_input.value()
+                    generated_data = f"16 {value:02X}"
+                except:
+                    generated_data = "16 00"
+                    
+            elif type_code in ['23', '24']:  # Float32, Float64
+                # 基本类型，不需要长度
+                try:
+                    import struct
+                    value = float(self.float_value_input.text())
+                    if type_code == '23':  # Float32
+                        hex_bytes = struct.pack('>f', value).hex().upper()
+                        generated_data = f"17 {hex_bytes}"
+                    else:  # Float64
+                        hex_bytes = struct.pack('>d', value).hex().upper()
+                        generated_data = f"18 {hex_bytes}"
+                    generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                except:
+                    if type_code == '23':
+                        generated_data = "17 00 00 00 00"
+                    else:
+                        generated_data = "18 00 00 00 00 00 00 00 00"
+                        
             elif type_code == '45':  # OAD
-                generated_data = "2D 40 00 02 00"  # 示例OAD
+                # 基本类型，不需要长度，4字节固定长度
+                try:
+                    value_hex = self.oad_value_input.text().strip().replace(' ', '')
+                    if len(value_hex) == 8:
+                        generated_data = f"2D {value_hex}"
+                        generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                    else:
+                        generated_data = "2D 40 00 02 00"  # 默认值
+                except:
+                    generated_data = "2D 40 00 02 00"
+                    
             elif type_code == '80':  # OI
-                generated_data = "50 40 00"  # 示例OI
-            elif type_code == '81':  # OMD
-                generated_data = "51 40 00 02 00"  # 示例OMD
-            elif type_code == '82':  # ROAD
-                generated_data = "52 40 00 02 00"  # 示例ROAD
-            elif type_code == '83':  # Region
-                generated_data = "53 02 40 00 02 00 40 01 02 00"  # 示例区域
-            elif type_code == '84':  # ScalerUnit
-                generated_data = "54 FE 1E"  # 示例比例单位
-            elif type_code == '85':  # RSD
-                generated_data = "55 40 00 02 00 01 02 03 04 05 06"  # 示例RSD
-            elif type_code == '86':  # CSD
-                generated_data = "56 40 00 02 00 01 02 03 04 05 06"  # 示例CSD
-            elif type_code == '87':  # MS
-                generated_data = "57 40 00 02 00 01"  # 示例MS
-            elif type_code == '88':  # SID
-                generated_data = "58 01 02 03 04"  # 示例SID
-            elif type_code == '89':  # SIDMac
-                generated_data = "59 01 02 03 04 05 06 07 08"  # 示例SIDMac
-            elif type_code == '90':  # COMDCB
-                generated_data = "5A 01 02 03 04 05 06 07 08 09 0A 0B 0C"  # 示例
-            elif type_code == '91':  # RCSD
-                generated_data = "5B 01 02 03 04 05 06 07 08 09 0A 0B 0C"  # 示例
+                # 基本类型，不需要长度，2字节固定长度
+                try:
+                    value_hex = self.oi_value_input.text().strip().replace(' ', '')
+                    if len(value_hex) == 4:
+                        generated_data = f"50 {value_hex}"
+                        generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                    else:
+                        generated_data = "50 40 00"  # 默认值
+                except:
+                    generated_data = "50 40 00"
+                    
             else:
-                generated_data = "00"  # 默认NULL
+                # 其他类型使用通用输入
+                try:
+                    value_hex = self.generic_value_input.text().strip().replace(' ', '')
+                    if value_hex:
+                        generated_data = f"{type_code} {value_hex}"
+                        generated_data = ' '.join([generated_data[i:i+2] for i in range(0, len(generated_data), 2)])
+                    else:
+                        generated_data = f"{type_code} 00"
+                except:
+                    generated_data = f"{type_code} 00"
             
             # 显示生成的数据
             self.data_display.setPlainText(generated_data)
@@ -803,7 +1452,6 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.append_log(f"生成数据错误: {str(e)}", "error")
             QMessageBox.critical(self, "错误", f"生成数据失败：{str(e)}")
-
     def add_generated_data(self):
         """将生成的数据添加到自定义数据框"""
         try:
@@ -835,29 +1483,88 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "错误", f"添加数据失败：{str(e)}")
 
     def on_service_type_changed(self, text):
-        """处理服务型改变事件"""
-        # 根据服务类型显示不同的据类型选项
-        if text == '读取请求':
-            self.service_data_type_combo.clear()
+        """处理服务类型改变事件（根据DL/T 698.45协议）"""
+        self.service_data_type_combo.clear()
+        
+        # 根据服务类型显示对应的数据类型选项（格式: 显示名称 [编码值]）
+        if 'LINK-Request' in text:  # 建立应用连接请求 (1)
             self.service_data_type_combo.addItems([
-                '请求一个对象属性',
-                '请求若干个对象属性',
-                '请求一个记录型对象属性',
-                '请求若干个记录型对象属性',
-                '请求分帧传输的下一',
-                '请求一个对象属性的MD5值'
+                'CONNECT-Request 建立应用连接请求 [0]'
             ])
             self.service_data_type_label.setVisible(True)
             self.service_data_type_combo.setVisible(True)
-        elif text == '设置请求':
-            self.service_data_type_combo.clear()
+            
+        elif 'RELEASE-Request' in text:  # 断开应用连接请求 (3)
             self.service_data_type_combo.addItems([
-                '请求设置一个对象性',
-                '请求设若干个对象属性',
-                '请求设置后若干个对象属性'
+                'RELEASE-Request 断开应用连接请求 [0]'
             ])
             self.service_data_type_label.setVisible(True)
             self.service_data_type_combo.setVisible(True)
+            
+        elif 'GET-Request' in text and 'COMPACT' not in text:  # 读取请求 (5)
+            self.service_data_type_combo.addItems([
+                'GetRequestNormal 读取一个对象属性 [1]',
+                'GetRequestNormalList 读取若干个对象属性 [2]',
+                'GetRequestRecord 读取一个记录型对象属性 [3]',
+                'GetRequestRecordList 读取若干个记录型对象属性 [4]',
+                'GetRequestNext 读取分帧传输的下一帧数据 [5]',
+                'GetRequestMD5 读取一个对象属性的MD5值 [6]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'SET-Request' in text and 'COMPACT' not in text:  # 设置请求 (6)
+            self.service_data_type_combo.addItems([
+                'SetRequestNormal 设置一个对象属性 [1]',
+                'SetRequestNormalList 设置若干个对象属性 [2]',
+                'SetThenGetRequestNormalList 设置后读取若干个对象属性 [3]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'ACTION-Request' in text:  # 操作请求 (7)
+            self.service_data_type_combo.addItems([
+                'ActionRequestNormal 操作一个对象方法 [1]',
+                'ActionRequestNormalList 操作若干个对象方法 [2]',
+                'ActionThenGetRequestNormalList 操作后读取若干个对象属性 [3]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'REPORT-Response' in text:  # 上报应答 (8)
+            self.service_data_type_combo.addItems([
+                'ReportResponseRecord 上报一个记录型对象 [1]',
+                'ReportResponseRecordList 上报若干个记录型对象 [2]',
+                'ReportResponseTransData 上报透传的数据 [3]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'PROXY-Request' in text:  # 代理请求 (9)
+            self.service_data_type_combo.addItems([
+                'ProxyRequestGetList 代理读取若干个服务器的若干个对象属性 [1]',
+                'ProxyRequestSetList 代理设置若干个服务器的若干个对象属性 [2]',
+                'ProxyRequestActionList 代理操作若干个服务器的若干个对象方法 [3]',
+                'ProxyRequestTransCommandList 代理透传若干个服务器的命令 [4]',
+                'ProxyRequestGetTransData 代理读取若干个服务器的若干个透传对象 [5]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'COMPACT-GET-Request' in text:  # 简化读取请求 (133)
+            self.service_data_type_combo.addItems([
+                'CompactGetRequestNormal 简化读取一个对象属性 [1]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
+        elif 'COMPACT-SET-Request' in text:  # 简化设置请求 (134)
+            self.service_data_type_combo.addItems([
+                'CompactSetRequestNormal 简化设置一个对象属性 [1]'
+            ])
+            self.service_data_type_label.setVisible(True)
+            self.service_data_type_combo.setVisible(True)
+            
         else:
             self.service_data_type_label.setVisible(False)
             self.service_data_type_combo.setVisible(False)
@@ -1097,161 +1804,196 @@ class MainWindow(QMainWindow):
             self.max_btn.setText("□")
             self.is_log_maximized = False
 
-    def create_protocol_config_window(self):
-        """创建协议配置窗口（合并为TabWidget）"""
-        dock = QDockWidget("配置面板", self)
-        dock.setFeatures(
-            QDockWidget.DockWidgetClosable | 
-            QDockWidget.DockWidgetFloatable | 
-            QDockWidget.DockWidgetMovable
-        )
+    def create_protocol_config_panel(self):
+        """创建协议配置面板（固定在左侧）"""
+        # 创建配置面板容器
+        self.protocol_config_panel = QWidget()
+        self.protocol_config_panel.setMinimumWidth(380)  # 设置最小宽度
+        # 不设置最大宽度，允许用户拖拽调整
         
-        # 设置初始宽度和最小宽度
-        dock.setMinimumWidth(400)
-        dock.resize(600, 800)
+        # 主容器布局
+        panel_layout = QVBoxLayout(self.protocol_config_panel)
+        panel_layout.setSpacing(0)
+        panel_layout.setContentsMargins(0, 0, 0, 0)
         
-        # 创建TabWidget作为主容器
-        tab_widget = QTabWidget()
-        tab_widget.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-            }
-            QTabBar::tab {
-                background-color: #f5f5f5;
-                padding: 8px 16px;
-                font-size: 10pt;
-            }
-            QTabBar::tab:selected {
-                background-color: white;
-                font-weight: bold;
-            }
-        """)
+        # ========== 协议配置内容 ==========
+        # 创建内容容器（替代原来的protocol_tab）
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setSpacing(8)  # 减小间距从10到8
+        content_layout.setContentsMargins(8, 8, 8, 8)  # 减小边距从10到8
         
-        # ========== 第一个标签页：协议配置 ==========
-        protocol_tab = QWidget()
-        content_layout = QVBoxLayout(protocol_tab)
-        content_layout.setSpacing(10)
-        content_layout.setContentsMargins(10, 10, 10, 10)
-        
-        # 控制域配置组
+        # 控制域配置组（优化布局）
         control_group = QGroupBox("控制域(CBIN)")
-        control_layout = QGridLayout()
-        control_layout.setSpacing(10)
-        control_layout.setContentsMargins(15, 15, 15, 15)
+        control_layout = QVBoxLayout()  # 改为垂直布局
+        control_layout.setSpacing(5)
+        control_layout.setContentsMargins(10, 10, 10, 10)
         
-        # 添加控制域控件
-        control_layout.addWidget(QLabel("D7传输方向:"), 0, 0)
-        control_layout.addWidget(self.dir_combo, 0, 1)
-        control_layout.addWidget(QLabel("D6启动标志:"), 0, 2)
-        control_layout.addWidget(self.prm_combo, 0, 3)
+        # D7传输方向
+        dir_layout = QHBoxLayout()
+        dir_layout.addWidget(QLabel("D7传输方向:"))
+        dir_layout.addWidget(self.dir_combo, 1)
+        control_layout.addLayout(dir_layout)
         
-        control_layout.addWidget(QLabel("D5分帧标志:"), 1, 0)
-        control_layout.addWidget(self.split_combo, 1, 1)
-        control_layout.addWidget(QLabel("D3数据域标志:"), 1, 2)
-        control_layout.addWidget(self.sc_combo, 1, 3)
+        # D6启动标志
+        prm_layout = QHBoxLayout()
+        prm_layout.addWidget(QLabel("D6启动标志:"))
+        prm_layout.addWidget(self.prm_combo, 1)
+        control_layout.addLayout(prm_layout)
         
-        control_layout.addWidget(QLabel("D2-D0功能码:"), 2, 0)
-        control_layout.addWidget(self.func_combo, 2, 1, 1, 3)
+        # D5分帧标志
+        split_layout = QHBoxLayout()
+        split_layout.addWidget(QLabel("D5分帧标志:"))
+        split_layout.addWidget(self.split_combo, 1)
+        control_layout.addLayout(split_layout)
+        
+        # D3数据域标志
+        sc_layout = QHBoxLayout()
+        sc_layout.addWidget(QLabel("D3数据域标志:"))
+        sc_layout.addWidget(self.sc_combo, 1)
+        control_layout.addLayout(sc_layout)
+        
+        # D2-D0功能码
+        func_layout = QHBoxLayout()
+        func_layout.addWidget(QLabel("D2-D0功能码:"))
+        func_layout.addWidget(self.func_combo, 1)
+        control_layout.addLayout(func_layout)
         
         control_group.setLayout(control_layout)
         content_layout.addWidget(control_group)
         
-        # SA标志配置组
+        # SA标志配置组（优化布局）
         sa_flag_group = QGroupBox("服务器地址SA标志字节(BCD)")
-        sa_flag_layout = QGridLayout()
-        sa_flag_layout.setSpacing(10)
-        sa_flag_layout.setContentsMargins(15, 15, 15, 15)
+        sa_flag_layout = QVBoxLayout()
+        sa_flag_layout.setSpacing(5)
+        sa_flag_layout.setContentsMargins(10, 10, 10, 10)
         
-        sa_flag_layout.addWidget(QLabel("D7-D6地址类型:"), 0, 0)
-        sa_flag_layout.addWidget(self.addr_type_combo, 0, 1)
-        sa_flag_layout.addWidget(QLabel("D5扩展逻辑地址:"), 0, 2)
-        sa_flag_layout.addWidget(self.ext_logic_addr_combo, 0, 3)
+        # D7-D6地址类型
+        addr_type_layout = QHBoxLayout()
+        addr_type_layout.addWidget(QLabel("D7-D6地址类型:"))
+        addr_type_layout.addWidget(self.addr_type_combo, 1)
+        sa_flag_layout.addLayout(addr_type_layout)
         
-        sa_flag_layout.addWidget(QLabel("D4逻辑地址标志:"), 1, 0)
-        sa_flag_layout.addWidget(self.logic_addr_flag_combo, 1, 1)
-        sa_flag_layout.addWidget(QLabel("D3-D0地址长度:"), 1, 2)
-        sa_flag_layout.addWidget(self.addr_len_input, 1, 3)
+        # SA逻辑地址（bit4和bit5组成）
+        sa_logic_layout = QHBoxLayout()
+        sa_logic_layout.addWidget(QLabel("SA逻辑地址(bit4+bit5):"))
+        sa_logic_layout.addWidget(self.sa_logic_addr_combo, 1)
+        sa_flag_layout.addLayout(sa_logic_layout)
+        
+        # 扩展逻辑地址输入
+        ext_logic_input_layout = QHBoxLayout()
+        ext_logic_input_layout.addWidget(QLabel("扩展逻辑地址值:"))
+        ext_logic_input_layout.addWidget(self.sa_ext_logic_input, 1)
+        sa_flag_layout.addLayout(ext_logic_input_layout)
+        
+        # D3-D0地址长度
+        addr_len_layout = QHBoxLayout()
+        addr_len_layout.addWidget(QLabel("D3-D0地址长度:"))
+        addr_len_layout.addWidget(self.addr_len_input, 1)
+        sa_flag_layout.addLayout(addr_len_layout)
         
         sa_flag_group.setLayout(sa_flag_layout)
         content_layout.addWidget(sa_flag_group)
         
-        # 服务器地址配置组
+        # 服务器地址配置组（优化布局）
         sa_group = QGroupBox("服务器地址(SA)")
-        sa_layout = QGridLayout()
-        sa_layout.setSpacing(10)
-        sa_layout.setContentsMargins(15, 15, 15, 15)
+        sa_layout = QVBoxLayout()
+        sa_layout.setSpacing(5)
+        sa_layout.setContentsMargins(10, 10, 10, 10)
         
-        sa_layout.addWidget(QLabel("SA逻辑地址:"), 0, 0)
-        sa_layout.addWidget(self.sa_logic_addr, 0, 1)
+        # 客户机地址(CA)
+        ca_layout = QHBoxLayout()
+        ca_layout.addWidget(QLabel("客户机地址(CA):"))
+        ca_layout.addWidget(self.logic_addr, 1)
+        sa_layout.addLayout(ca_layout)
         
-        sa_layout.addWidget(QLabel("客户机地址(CA):"), 1, 0)
-        sa_layout.addWidget(self.logic_addr, 1, 1)
-        
-        sa_layout.addWidget(QLabel("通信地址(SA):"), 2, 0)
-        sa_layout.addWidget(self.comm_addr, 2, 1)
+        # 通信地址(SA)
+        comm_addr_layout = QHBoxLayout()
+        comm_addr_layout.addWidget(QLabel("通信地址(SA):"))
+        comm_addr_layout.addWidget(self.comm_addr, 1)
+        sa_layout.addLayout(comm_addr_layout)
         
         sa_group.setLayout(sa_layout)
         content_layout.addWidget(sa_group)
         
-        # APDU配置组
+        # APDU配置组（优化为垂直布局）
         apdu_group = QGroupBox("APDU")
-        apdu_layout = QGridLayout()
-        apdu_layout.setSpacing(10)
-        apdu_layout.setContentsMargins(15, 15, 15, 15)
+        apdu_layout = QVBoxLayout()  # 改为垂直布局
+        apdu_layout.setSpacing(5)
+        apdu_layout.setContentsMargins(10, 10, 10, 10)
         
-        # 服务类型和数据类型
-        apdu_layout.addWidget(QLabel("服务类型:"), 0, 0)
-        apdu_layout.addWidget(self.service_type_combo, 0, 1)
-        apdu_layout.addWidget(self.service_data_type_label, 0, 2)
-        apdu_layout.addWidget(self.service_data_type_combo, 0, 3)
+        # 服务类型
+        service_type_layout = QHBoxLayout()
+        service_type_layout.addWidget(QLabel("服务类型:"))
+        service_type_layout.addWidget(self.service_type_combo, 1)
+        apdu_layout.addLayout(service_type_layout)
         
-        # 服务优先级和序号
-        apdu_layout.addWidget(QLabel("服务优先级:"), 1, 0)
-        apdu_layout.addWidget(self.service_priority_combo, 1, 1)
-        apdu_layout.addWidget(QLabel("服务序号:"), 1, 2)
-        apdu_layout.addWidget(self.service_number_spin, 1, 3)
+        # 数据类型（根据需要显示）
+        data_type_layout = QHBoxLayout()
+        data_type_layout.addWidget(self.service_data_type_label)
+        data_type_layout.addWidget(self.service_data_type_combo, 1)
+        apdu_layout.addLayout(data_type_layout)
         
-        # OAD选择和输入（GridLayout布局）
-        apdu_layout.addWidget(QLabel("OAD:"), 2, 0, Qt.AlignTop)
+        # 服务优先级
+        priority_layout = QHBoxLayout()
+        priority_layout.addWidget(QLabel("服务优先级:"))
+        priority_layout.addWidget(self.service_priority_combo, 1)
+        apdu_layout.addLayout(priority_layout)
+        
+        # 服务序号
+        number_layout = QHBoxLayout()
+        number_layout.addWidget(QLabel("服务序号:"))
+        number_layout.addWidget(self.service_number_spin, 1)
+        apdu_layout.addLayout(number_layout)
+        
+        # OAD选择和输入（优化为垂直布局）
+        apdu_layout.addWidget(QLabel("OAD:"))
         
         # 创建OAD配置组
         oad_group = QGroupBox()
-        oad_grid = QGridLayout()
-        oad_grid.setSpacing(10)
-        oad_grid.setContentsMargins(10, 10, 10, 10)
+        oad_layout = QVBoxLayout()  # 改为垂直布局
+        oad_layout.setSpacing(5)
+        oad_layout.setContentsMargins(5, 5, 5, 5)
         
-        # 第一行：对象大类和OI
-        oad_grid.addWidget(QLabel("对象大类:"), 0, 0)
+        # 第一行：对象大类
+        oi_class_layout = QHBoxLayout()
+        oi_class_layout.addWidget(QLabel("对象大类:"))
         self.oi_class_combo = QComboBox()
-        self.oi_class_combo.setMinimumWidth(200)
         if self.oad_config and 'OI_CLASS' in self.oad_config:
             self.oi_class_combo.addItems(self.oad_config['OI_CLASS'].keys())
         self.oi_class_combo.currentTextChanged.connect(self.on_oi_class_changed)
-        oad_grid.addWidget(self.oi_class_combo, 0, 1)
+        oi_class_layout.addWidget(self.oi_class_combo, 1)
+        oad_layout.addLayout(oi_class_layout)
         
-        oad_grid.addWidget(QLabel("OI(对象标识):"), 0, 2)
+        # 第二行：OI(对象标识)
+        oi_layout = QHBoxLayout()
+        oi_layout.addWidget(QLabel("OI(对象标识):"))
         self.oi_subclass_combo = QComboBox()
-        self.oi_subclass_combo.setMinimumWidth(250)
         self.oi_subclass_combo.currentTextChanged.connect(self.update_oad_input)
-        oad_grid.addWidget(self.oi_subclass_combo, 0, 3)
+        oi_layout.addWidget(self.oi_subclass_combo, 1)
+        oad_layout.addLayout(oi_layout)
         
-        # 第二行：属性和索引
-        oad_grid.addWidget(QLabel("属性ID:"), 1, 0)
+        # 第三行：属性ID
+        property_layout = QHBoxLayout()
+        property_layout.addWidget(QLabel("属性ID:"))
         self.property_combo = QComboBox()
         if self.oad_config and 'PROPERTY' in self.oad_config:
             self.property_combo.addItems(self.oad_config['PROPERTY'].keys())
         self.property_combo.currentTextChanged.connect(self.update_oad_input)
-        oad_grid.addWidget(self.property_combo, 1, 1)
+        property_layout.addWidget(self.property_combo, 1)
+        oad_layout.addLayout(property_layout)
         
-        oad_grid.addWidget(QLabel("索引:"), 1, 2)
+        # 第四行：索引
+        index_layout = QHBoxLayout()
+        index_layout.addWidget(QLabel("索引:"))
         self.index_combo = QComboBox()
         if self.oad_config and 'INDEX' in self.oad_config:
             self.index_combo.addItems(self.oad_config['INDEX'].keys())
         self.index_combo.currentTextChanged.connect(self.update_oad_input)
-        oad_grid.addWidget(self.index_combo, 1, 3)
+        index_layout.addWidget(self.index_combo, 1)
+        oad_layout.addLayout(index_layout)
         
-        # 第三行：OAD完整值（突出显示）
+        # 第五行：OAD完整值
         oad_result_layout = QHBoxLayout()
         oad_result_layout.addWidget(QLabel("OAD完整值:"))
         self.oad_input.setStyleSheet("""
@@ -1261,46 +2003,41 @@ class MainWindow(QMainWindow):
                 border-radius: 4px;
                 padding: 5px;
                 font-weight: bold;
-                font-size: 11pt;
+                font-size: 10pt;
             }
         """)
-        self.oad_input.setReadOnly(True)  # 设置为只读
-        oad_result_layout.addWidget(self.oad_input)
-        oad_grid.addLayout(oad_result_layout, 2, 0, 1, 4)
+        self.oad_input.setReadOnly(True)
+        oad_result_layout.addWidget(self.oad_input, 1)
+        oad_layout.addLayout(oad_result_layout)
         
-        oad_group.setLayout(oad_grid)
-        apdu_layout.addWidget(oad_group, 2, 1, 1, 3)
+        oad_group.setLayout(oad_layout)
+        apdu_layout.addWidget(oad_group)
         
         # 初始化OI小类列表
         if self.oi_class_combo.count() > 0:
             self.on_oi_class_changed(self.oi_class_combo.currentText())
         
         # 自定义数据
-        apdu_layout.addWidget(QLabel("自定义数据:"), 4, 0)
-        apdu_layout.addWidget(self.custom_data, 4, 1, 1, 3)
+        custom_data_layout = QHBoxLayout()
+        custom_data_layout.addWidget(QLabel("自定义数据:"))
+        custom_data_layout.addWidget(self.custom_data, 1)
+        apdu_layout.addLayout(custom_data_layout)
         
         apdu_group.setLayout(apdu_layout)
         content_layout.addWidget(apdu_group)
         
-        # 添加弹性空间
-        content_layout.addStretch()
+        # ========== 数据构造器组件 ==========
+        data_builder_group = QGroupBox("🔧 数据构造器")
+        data_builder_main_layout = QVBoxLayout()
+        data_builder_main_layout.setSpacing(6)  # 减小间距从8到6
+        data_builder_main_layout.setContentsMargins(8, 8, 8, 8)  # 减小边距从10到8
         
-        # 添加到TabWidget
-        tab_widget.addTab(protocol_tab, "📝 协议配置")
-        
-        # ========== 第二个标签页：数据构造器 ==========
-        data_builder_tab = QWidget()
-        data_builder_layout = QVBoxLayout(data_builder_tab)
-        data_builder_layout.setSpacing(10)
-        data_builder_layout.setContentsMargins(10, 10, 10, 10)
-        
-        # 数据类型选择组
-        data_type_group = QGroupBox("数据类型")
-        data_type_layout = QVBoxLayout()
-        data_type_layout.setSpacing(10)
-        data_type_layout.setContentsMargins(15, 15, 15, 15)
-        
-        # 数据类型下拉框
+        # 数据类型选择
+        data_type_layout = QHBoxLayout()
+        data_type_layout.setSpacing(5)  # 设置合理间距避免重叠
+        type_label = QLabel("数据类型:")
+        type_label.setFixedWidth(60)  # 固定标签宽度避免重叠
+        data_type_layout.addWidget(type_label)
         self.data_type_combo = QComboBox()
         self.data_type_combo.addItems([
             'NullData(0)',
@@ -1338,26 +2075,32 @@ class MainWindow(QMainWindow):
             'COMDCB(90)',
             'RCSD(91)'
         ])
-        self.data_type_combo.setMinimumHeight(30)
-        data_type_layout.addWidget(self.data_type_combo)
+        self.data_type_combo.setFixedHeight(24)  # 减小高度从30到24
+        self.data_type_combo.currentTextChanged.connect(self.on_data_type_changed)
+        data_type_layout.addWidget(self.data_type_combo, 1)  # 添加伸缩因子
+        data_builder_main_layout.addLayout(data_type_layout)
         
-        data_type_group.setLayout(data_type_layout)
-        data_builder_layout.addWidget(data_type_group)
+        # 动态参数输入区域（根据数据类型动态显示）
+        self.param_input_widget = QWidget()
+        self.param_input_layout = QVBoxLayout(self.param_input_widget)
+        self.param_input_layout.setSpacing(5)
+        self.param_input_layout.setContentsMargins(0, 0, 0, 0)
+        data_builder_main_layout.addWidget(self.param_input_widget)
         
         # 按钮组
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(10)
+        button_layout.setSpacing(6)  # 减小按钮间距
         
         # 生成数据按钮
         self.generate_data_btn = QPushButton("生成数据")
-        self.generate_data_btn.setMinimumHeight(40)
+        self.generate_data_btn.setFixedHeight(28)  # 减小高度从40到28
         self.generate_data_btn.setStyleSheet("""
             QPushButton {
                 background-color: #2196f3;
                 color: white;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 11pt;
+                border-radius: 3px;
+                padding: 4px 10px;
+                font-size: 9pt;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -1371,15 +2114,15 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.generate_data_btn)
         
         # 添加数据按钮
-        self.add_data_btn = QPushButton("添加数据")
-        self.add_data_btn.setMinimumHeight(40)
+        self.add_data_btn = QPushButton("添加到自定义数据")
+        self.add_data_btn.setFixedHeight(28)  # 减小高度从40到28
         self.add_data_btn.setStyleSheet("""
             QPushButton {
                 background-color: #4caf50;
                 color: white;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 11pt;
+                border-radius: 3px;
+                padding: 4px 10px;
+                font-size: 9pt;
                 font-weight: bold;
             }
             QPushButton:hover {
@@ -1392,74 +2135,77 @@ class MainWindow(QMainWindow):
         self.add_data_btn.clicked.connect(self.add_generated_data)
         button_layout.addWidget(self.add_data_btn)
         
-        data_builder_layout.addLayout(button_layout)
+        data_builder_main_layout.addLayout(button_layout)
         
         # 数据显示区域
-        data_display_group = QGroupBox("生成的数据")
         data_display_layout = QVBoxLayout()
-        data_display_layout.setContentsMargins(10, 10, 10, 10)
+        data_display_layout.setSpacing(3)  # 设置标签和文本框间距
+        display_label = QLabel("生成的数据:")
+        display_label.setStyleSheet("font-size: 9pt;")
+        data_display_layout.addWidget(display_label)
         
         self.data_display = QTextEdit()
         self.data_display.setPlaceholderText("点击'生成数据'按钮后，生成的数据将显示在此处...")
-        self.data_display.setMinimumHeight(300)
+        self.data_display.setFixedHeight(70)  # 固定高度为70px，更紧凑
         self.data_display.setStyleSheet("""
             QTextEdit {
                 background-color: #f5f5f5;
-                border: 2px solid #cccccc;
-                border-radius: 4px;
-                padding: 10px;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+                padding: 5px;
                 font-family: 'Consolas', 'Courier New', monospace;
-                font-size: 10pt;
+                font-size: 9pt;
             }
         """)
         data_display_layout.addWidget(self.data_display)
+        data_builder_main_layout.addLayout(data_display_layout)
         
-        data_display_group.setLayout(data_display_layout)
-        data_builder_layout.addWidget(data_display_group)
+        data_builder_group.setLayout(data_builder_main_layout)
+        content_layout.addWidget(data_builder_group)
+        
+        # 初始化时触发数据类型变化，显示默认类型的参数输入
+        if self.data_type_combo.count() > 0:
+            self.on_data_type_changed(self.data_type_combo.currentText())
         
         # 添加弹性空间
-        data_builder_layout.addStretch()
+        content_layout.addStretch()
         
-        # 添加到TabWidget
-        tab_widget.addTab(data_builder_tab, "🔧 数据构造器")
-        
-        # 使用滚动区域包裹TabWidget
+        # 使用滚动区域包裹内容容器
         scroll_area = QScrollArea()
-        scroll_area.setWidget(tab_widget)
+        scroll_area.setWidget(content_widget)
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # 确保滚动区域背景透明
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: transparent;
+            }
+        """)
         
-        # 设置内容窗口
-        dock.setWidget(scroll_area)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
-        
-        # 添加到窗口菜单
-        toggle_action = dock.toggleViewAction()
-        toggle_action.setText("配置面板")
-        self.windows_menu.addAction(toggle_action)
+        # 将滚动区域添加到面板布局
+        panel_layout.addWidget(scroll_area)
 
+    # 以下方法不再需要，因为配置面板和日志区域已经固定在主界面中
     def minimize_config_window(self):
-        """最小化配置窗口"""
-        if dock.isFloating():
-            dock.showMinimized()
-        else:
-            dock.hide()
+        """最小化配置窗口（已废弃）"""
+        pass
 
     def toggle_maximize_config_window(self):
-        """切换配置窗口最大状态"""
-        if not dock.isFloating():
-            dock.setFloating(True)
-        
-        if not self.is_config_maximized:
-            self.normal_config_size = dock.size()
-            dock.setGeometry(self.screen().availableGeometry())
-            self.config_max_btn.setText("❐")
-            self.is_config_maximized = True
-        else:
-            dock.resize(self.normal_config_size)
-            self.config_max_btn.setText("□")
-            self.is_config_maximized = False
+        """切换配置窗口最大状态（已废弃）"""
+        pass
+    
+    def minimize_log_window(self):
+        """最小化日志窗口（已废弃）"""
+        pass
+
+    def toggle_maximize_log_window(self):
+        """切换日志窗口最大化状态（已废弃）"""
+        pass
 
     def create_receive_display(self):
         """这个方法不需要，因为已经在create_dockable_log_window中创建了receive_display"""
@@ -2053,79 +2799,7 @@ class MainWindow(QMainWindow):
             </div>
             """)
 
-    def show_theme_dialog(self):
-        """显示主题配置对话框"""
-        from ui.theme_dialog import ThemeDialog
-        dialog = ThemeDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
-            theme = dialog.get_current_theme()
-            self.apply_theme(theme)
-            self.save_current_theme(theme)
-
-    def apply_theme(self, theme):
-        """应用Fusion风格主题"""
-        style = """
-            /* 全局��式 */
-            * {
-                font-family: "黑体";
-                font-size: 9pt;
-            }
-
-            /* 分组框 */
-            QGroupBox {
-                margin-top: 12px;
-                padding: 8px;  /* 减小内边距 */
-                border: 1px solid #C0C0C0;
-                border-radius: 2px;
-            }
-
-            /* 下拉框 */
-            QComboBox {
-                min-height: 20px;
-                max-height: 20px;
-                padding: 1px 3px;
-            }
-
-            /* 输入框 */
-            QLineEdit {
-                min-height: 20px;
-                max-height: 20px;
-                padding: 1px 3px;
-            }
-
-            /* 标签 */
-            QLabel {
-                margin: 0px;
-                padding: 0px;
-                min-height: 20px;
-            }
-
-            /* 数字输入框 */
-            QSpinBox {
-                min-height: 20px;
-                max-height: 20px;
-                padding: 1px 3px;
-            }
-        """
-        self.setStyleSheet(style)
-
-    def save_current_theme(self, theme):
-        """保存当前主题设置"""
-        try:
-            with open('config/current_theme.json', 'w', encoding='utf-8') as f:
-                json.dump(theme, f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            print(f"保存当前主题失败: {e}")
-
-    def load_saved_theme(self):
-        """加载保存的主题设置"""
-        try:
-            if os.path.exists('config/current_theme.json'):
-                with open('config/current_theme.json', 'r', encoding='utf-8') as f:
-                    theme = json.load(f)
-                    self.apply_theme(theme)
-        except Exception as e:
-            print(f"加载主题设置失败: {e}")
+    # 主题相关方法已移除，使用PySide6原生默认风格
 
     def delete_selected_frames(self):
         """删除选中的帧"""
@@ -2143,11 +2817,11 @@ class MainWindow(QMainWindow):
             self,
             "确认删除",
             f"确定要删除选中的 {len(selected_rows)} 个帧吗？",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             # 从后向前删除，避免索引变化
             for row in sorted(selected_rows, reverse=True):
                 # 获帧名称
@@ -2184,11 +2858,11 @@ class MainWindow(QMainWindow):
             self,
             "确认发送",
             f"确定要发送所有帧吗？",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             # 初始化计数器
             self.case_count = self.frame_table.rowCount()
             self.success_count = 0
@@ -2286,11 +2960,23 @@ class MainWindow(QMainWindow):
             sa_logic_addr = self.sa_logic_addr.text()
             logic_addr = self.logic_addr.text()
             comm_addr = self.comm_addr.text()
+            ext_logic_addr_content = self.ext_logic_addr_input.text().strip()
             
             service_type = self.service_type_combo.currentText()
             service_data_type = self.service_data_type_combo.currentText()
             service_priority = self.service_priority_combo.currentText()
             service_number = self.service_number_spin.value()
+            
+            # 获取服务类型和数据类型的编码，用于日志显示
+            service_type_code = self.service_type_codes.get(service_type, '00')
+            service_data_type_code = self.service_data_type_codes.get(service_data_type, '00') if service_data_type else '00'
+            
+            # 在日志中显示APDU配置信息
+            if service_type:
+                self.append_log(f"APDU配置: 服务类型={service_type} [编码:{service_type_code}H]", "info")
+                if service_data_type:
+                    self.append_log(f"          数据类型={service_data_type} [编码:{service_data_type_code}H]", "info")
+                self.append_log(f"          PIID=优先级{service_priority}|序号{service_number}", "info")
             
             # 获取并验证OAD值
             oad = '00000000'
@@ -2314,7 +3000,7 @@ class MainWindow(QMainWindow):
                     ext_logic_addr, logic_addr_flag,
                     service_type, service_data_type,
                     service_priority, service_number,
-                    oad, custom_data
+                    oad, custom_data, ext_logic_addr_content
                 )
                 self.append_log(f"帧数据创建成功: {frame_data.hex()}", "success")
                 return frame_data

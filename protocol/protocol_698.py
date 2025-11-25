@@ -57,24 +57,40 @@ class Protocol698:
     ADDR_LEN_MAP = {
         0: 1,  # 0表示1字节
         1: 2,  # 1表示2字节
-        2: 4,  # 2表示4字节
-        5: 6,   # 5表示6字节
+        2: 3,  # 2表示3字节
+        3: 4,  # 3表示4字节
+        4: 5,  # 4表示5字节
+        5: 6,  # 5表示6字节
         6: 7,  # 6表示7字节
-        7: 8,   # 7表示8字节
-        8: 9,   # 8表示9字节
-
+        7: 8,  # 7表示8字节
+        8: 9,  # 8表示9字节
+        9: 10, # 9表示10字节
+        10: 11, # A表示11字节
+        11: 12, # B表示12字节
+        12: 13, # C表示13字节
+        13: 14, # D表示14字节
+        14: 15, # E表示15字节
+        15: 16  # F表示16字节
     }
     
     # 反向映射（字节数到D3-D0实际值的映射）
     ADDR_LEN_REVERSE_MAP = {
-        1: 0,  # 1字节用0表示
-        2: 1,  # 2字节用1表示
-        3: 2,
-        4: 3,  # 4字节用2表示
-        6: 5,  # 6字节用5表示
-        7: 6,  # 7字节用6表示
-        8: 7,  # 8字节用7表示
-        9: 8   # 9字节用8表��
+        1: 0,   # 1字节用0表示
+        2: 1,   # 2字节用1表示
+        3: 2,   # 3字节用2表示
+        4: 3,   # 4字节用3表示
+        5: 4,   # 5字节用4表示
+        6: 5,   # 6字节用5表示
+        7: 6,   # 7字节用6表示
+        8: 7,   # 8字节用7表示
+        9: 8,   # 9字节用8表示
+        10: 9,  # 10字节用9表示
+        11: 10, # 11字节用A表示
+        12: 11, # 12字节用B表示
+        13: 12, # 13字节用C表示
+        14: 13, # 14字节用D表示
+        15: 14, # 15字节用E表示
+        16: 15  # 16字节用F表示
     }
     
     # 添加SA地址标映射
@@ -97,11 +113,12 @@ class Protocol698:
         '广播地址-6字节(34)': 0x34
     }
     
-    # 应用层服务类型（1字节）
+    # 应用层服务类型（1字节）- 根据DL/T 698.45协议定义
     APDU_SERVICES = {
+        # 旧版接口兼容（仅中文名称）
         '建立应用连接请求': {
-            'code': 0x02,  # CONNECT-Request
-            'data_types': {}  # 暂无子类型
+            'code': 0x01,  # LINK-Request
+            'data_types': {}
         },
         '断开应用连接请求': {
             'code': 0x03,  # RELEASE-Request
@@ -112,7 +129,7 @@ class Protocol698:
             'data_types': {
                 '请求一个对象属性': 0x01,     # GetRequestNormal
                 '请求若干个对象属性': 0x02,   # GetRequestNormalList
-                '请求一个��录型对象属性': 0x03,  # GetRequestRecord
+                '请求一个记录型对象属性': 0x03,  # GetRequestRecord
                 '请求若干个记录型对象属性': 0x04,  # GetRequestRecordList
                 '请求分帧传输的下一帧': 0x05,  # GetRequestNext
                 '请求一个对象属性的MD5值': 0x06  # GetRequestMD5
@@ -137,6 +154,76 @@ class Protocol698:
         '代理请求': {
             'code': 0x09,  # PROXY-Request
             'data_types': {}
+        },
+        # 新版接口（带英文名称和编码）
+        'LINK-Request 建立应用连接请求 (1)': {
+            'code': 0x01,
+            'data_types': {
+                'CONNECT-Request 建立应用连接请求 [0]': 0x00
+            }
+        },
+        'RELEASE-Request 断开应用连接请求 (3)': {
+            'code': 0x03,
+            'data_types': {
+                'RELEASE-Request 断开应用连接请求 [0]': 0x00
+            }
+        },
+        'GET-Request 读取请求 (5)': {
+            'code': 0x05,
+            'data_types': {
+                'GetRequestNormal 读取一个对象属性 [1]': 0x01,
+                'GetRequestNormalList 读取若干个对象属性 [2]': 0x02,
+                'GetRequestRecord 读取一个记录型对象属性 [3]': 0x03,
+                'GetRequestRecordList 读取若干个记录型对象属性 [4]': 0x04,
+                'GetRequestNext 读取分帧传输的下一帧数据 [5]': 0x05,
+                'GetRequestMD5 读取一个对象属性的MD5值 [6]': 0x06
+            }
+        },
+        'SET-Request 设置请求 (6)': {
+            'code': 0x06,
+            'data_types': {
+                'SetRequestNormal 设置一个对象属性 [1]': 0x01,
+                'SetRequestNormalList 设置若干个对象属性 [2]': 0x02,
+                'SetThenGetRequestNormalList 设置后读取若干个对象属性 [3]': 0x03
+            }
+        },
+        'ACTION-Request 操作请求 (7)': {
+            'code': 0x07,
+            'data_types': {
+                'ActionRequestNormal 操作一个对象方法 [1]': 0x01,
+                'ActionRequestNormalList 操作若干个对象方法 [2]': 0x02,
+                'ActionThenGetRequestNormalList 操作后读取若干个对象属性 [3]': 0x03
+            }
+        },
+        'REPORT-Response 上报应答 (8)': {
+            'code': 0x08,
+            'data_types': {
+                'ReportResponseRecord 上报一个记录型对象 [1]': 0x01,
+                'ReportResponseRecordList 上报若干个记录型对象 [2]': 0x02,
+                'ReportResponseTransData 上报透传的数据 [3]': 0x03
+            }
+        },
+        'PROXY-Request 代理请求 (9)': {
+            'code': 0x09,
+            'data_types': {
+                'ProxyRequestGetList 代理读取若干个服务器的若干个对象属性 [1]': 0x01,
+                'ProxyRequestSetList 代理设置若干个服务器的若干个对象属性 [2]': 0x02,
+                'ProxyRequestActionList 代理操作若干个服务器的若干个对象方法 [3]': 0x03,
+                'ProxyRequestTransCommandList 代理透传若干个服务器的命令 [4]': 0x04,
+                'ProxyRequestGetTransData 代理读取若干个服务器的若干个透传对象 [5]': 0x05
+            }
+        },
+        'COMPACT-GET-Request 简化读取请求 (133)': {
+            'code': 0x85,
+            'data_types': {
+                'CompactGetRequestNormal 简化读取一个对象属性 [1]': 0x01
+            }
+        },
+        'COMPACT-SET-Request 简化设置请求 (134)': {
+            'code': 0x86,
+            'data_types': {
+                'CompactSetRequestNormal 简化设置一个对象属性 [1]': 0x01
+            }
         }
     }
     
@@ -207,11 +294,13 @@ class Protocol698:
         return bytes(sa_flag)[0]
     
     def create_frame(self, direction, prm, function, split_frame, addr_type, addr_len,
-                    sa_logic_addr, logic_addr, comm_addr, ext_logic_addr, logic_addr_flag,
+                    sa_logic_value, bit5, logic_addr, comm_addr,
                     service_type, service_data_type, service_priority, service_number, oad,
                     custom_data=''):
         """
-        创建698.45协议帧（优化版 - 修复CRC计算）
+        创建698.45协议帧
+        sa_logic_value: SA逻辑地址值（0, 1, 或 2-255）
+        bit5: 扩展逻辑地址标志（0或1）
         """
         frame = []
         
@@ -236,21 +325,34 @@ class Protocol698:
         frame.append(bytes(control)[0])
         
         # 4. SA标志字节
+        # 根据协议：bit5=扩展逻辑地址标志，bit4根据sa_logic_value确定
         sa_flag = SAFlagField()
         sa_flag.addr_type = int(addr_type.split('(')[1].split(')')[0])
-        sa_flag.ext_logic = 1 if ext_logic_addr == '有扩展逻辑地址(1)' else 0
-        sa_flag.logic_addr = 1 if logic_addr_flag == '有逻辑地址(1)' else 0
+        sa_flag.ext_logic = bit5
+        
+        # bit4的值根据SA逻辑地址确定
+        if bit5 == 0:
+            # bit5=0时，bit4表示逻辑地址0或1
+            sa_flag.logic_addr = sa_logic_value  # 0或1
+        else:
+            # bit5=1时，bit4备用
+            sa_flag.logic_addr = 0
+        
         sa_flag.addr_len = self.ADDR_LEN_REVERSE_MAP[int(addr_len)]
         frame.append(bytes(sa_flag)[0])
         
-        # 5. SA逻辑地址（如果有）
-        addr_length = int(addr_len)
-        if logic_addr_flag == '有逻辑地址(1)' and sa_logic_addr:
-            sa_logic_addr_int = int(sa_logic_addr, 16)
-            frame.append(sa_logic_addr_int & 0xFF)
+        # 5. 扩展逻辑地址（如果bit5=1）
+        # 根据698.45协议：扩展逻辑地址是固定1字节长度，值为sa_logic_value（2-255）
+        ext_logic_content_len = 0
+        if bit5 == 1:
+            ext_logic_content_len = 1
+            frame.append(sa_logic_value & 0xFF)  # 写入扩展逻辑地址值
         
         # 6. SA地址（低字节在前）
-        sa_bytes = bytes.fromhex(comm_addr.zfill(addr_length*2))
+        # 注意：SA地址长度 = addr_len(总长度) - ext_logic_content_len(扩展逻辑地址长度)
+        sa_comm_addr_len = int(addr_len) - ext_logic_content_len
+        comm_addr_hex = comm_addr.replace(' ', '').replace('\t', '')
+        sa_bytes = bytes.fromhex(comm_addr_hex.zfill(sa_comm_addr_len*2))
         frame.extend(list(reversed(sa_bytes)))
         
         # 7. CA客户机地址
@@ -385,11 +487,24 @@ class Protocol698:
                 result['SA逻辑地址'] = f'{sa_logic:02X}H'
                 idx += 1
             
-            # 6. SA地址 (addr_len字节，小端)
-            sa_addr_bytes = frame_bytes[idx:idx+addr_len]
+            # 5.5 扩展逻辑地址 (如果有)
+            # 根据698.45协议：扩展逻辑地址是固定1字节长度，无需长度字段
+            ext_logic_content_len = 0
+            if sa_flag & 0x20:  # 有扩展逻辑地址
+                if idx < len(frame_bytes):
+                    ext_logic_byte = frame_bytes[idx]
+                    ext_logic_content_len = 1  # 固定1字节
+                    result['扩展逻辑地址'] = f'{ext_logic_byte:02X}H'
+                    idx += 1
+                else:
+                    result['扩展逻辑地址'] = '错误：缺少扩展逻辑地址字节'
+            
+            # 6. SA地址 (实际长度 = addr_len - ext_logic_content_len, 小端)
+            sa_actual_len = addr_len - ext_logic_content_len
+            sa_addr_bytes = frame_bytes[idx:idx+sa_actual_len]
             sa_addr = ''.join(f'{b:02X}' for b in reversed(sa_addr_bytes))
             result['SA地址'] = sa_addr
-            idx += addr_len
+            idx += sa_actual_len
             
             # 7. CA地址 (1字节)
             ca = frame_bytes[idx]
