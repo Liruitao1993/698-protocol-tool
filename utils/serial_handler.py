@@ -4,7 +4,6 @@ import time
 import serial
 import serial.tools.list_ports
 import traceback
-from func_timeout import func_set_timeout, FunctionTimedOut
 
 class SerialHandler(QObject):
     data_received = Signal(str)  # Define signal for received data
@@ -19,6 +18,10 @@ class SerialHandler(QObject):
         self.frame_buffer = bytearray()
         self.last_receive_time = 0
         self.frame_timeout = 0.05  # 50ms timeout for frame completion
+        
+        # Response frame event and data
+        self.response_event = threading.Event()
+        self.response_frame = None
         
     def get_available_ports(self):
         """Get a list of available serial ports"""
@@ -126,27 +129,26 @@ class SerialHandler(QObject):
             return False, None
         
         try:
+            # 清除之前的响应数据和事件状态
+            self.response_event.clear()
+            self.response_frame = None
+            
             print(f"Sending data: {frame_data.hex()}")
             self.serial.write(frame_data)
             self.data_received.emit(f"Send: {frame_data.hex()}")  # Send log
             print("Data sent successfully, waiting for response...")
             
-            try:
-                # Use timeout decorator to receive response
-                response = self.receive_with_timeout(timeout)
+            # 等待后台线程组装完整帧
+            if self.response_event.wait(timeout / 1000.0):  # 转换为秒
+                response = self.response_frame
                 if response:
                     print(f"Response received: {response.hex()}")
-                    self.data_received.emit(f"Receive: {response.hex()}")  # Send log
+                    # 不再重复发送信号，receive_loop已经发送了
                     return True, response
-                else:
-                    print("Receive timeout")
-                    self.data_received.emit("Receive timeout")  # Send log
-                    return False, None
-                    
-            except FunctionTimedOut:
-                print("Receive timeout")
-                self.data_received.emit("Receive timeout")  # Send log
-                return False, None
+            
+            print("Receive timeout")
+            self.data_received.emit("Receive timeout")  # Send log
+            return False, None
                 
         except Exception as e:
             print(f"Send data error: {e}")
@@ -154,28 +156,6 @@ class SerialHandler(QObject):
             self._is_connected = False
             return False, None
 
-    @func_set_timeout(10)  # Default 10 second timeout
-    def receive_with_timeout(self, timeout):
-        """Receive data with timeout"""
-        start_time = time.time()
-        received_data = bytearray()
-        
-        try:
-            while (time.time() - start_time) < timeout/1000:  # Convert to seconds
-                if self.serial and self.serial.in_waiting:
-                    data = self.serial.read(self.serial.in_waiting)
-                    received_data.extend(data)
-                    # Send received data signal
-                    self.data_received.emit(data.hex())  # Send hex string
-                    # If complete frame received, return
-                    if received_data and received_data[-1] == 0x16:  # End character
-                        return bytes(received_data)
-                time.sleep(0.001)  # Short sleep to avoid high CPU usage
-            return None  # Return None on timeout
-            
-        except Exception as e:
-            print(f"Receive data error: {e}")
-            return None
 
     def process_frame_data(self, data):
         """Process received data for frame reassembly"""
@@ -228,10 +208,14 @@ class SerialHandler(QObject):
                         # Process data for frame reassembly
                         complete_frame = self.process_frame_data(data)
                         
-                        # If complete frame found, emit signal
+                        # If complete frame found, emit signal and set event
                         if complete_frame:
                             print(f"Complete frame assembled: {complete_frame.hex()}")
-                            self.data_received.emit(complete_frame.hex())
+                            self.data_received.emit(f"Receive: {complete_frame.hex()}")  # 统一格式
+                            
+                            # 设置响应帧并触发事件
+                            self.response_frame = complete_frame
+                            self.response_event.set()
                 
                 # Check for frame timeout (in case of incomplete frame)
                 if len(self.frame_buffer) > 0:

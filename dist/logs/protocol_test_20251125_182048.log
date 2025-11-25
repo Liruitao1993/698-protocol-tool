@@ -1,0 +1,25 @@
+2025-11-25 18:20:48.180 | INFO     | utils.logger:info:53 | 应用程序启动
+2025-11-25 18:21:43.290 | INFO     | utils.logger:info:53 | 开始导入帧列表从: E:/python/698.45-System/列表4.csv
+2025-11-25 18:21:43.294 | INFO     | utils.logger:info:53 | 导入帧: 读取请求_通信地址
+2025-11-25 18:21:43.301 | INFO     | utils.logger:info:53 | 导入帧: 读取请求_日期时间
+2025-11-25 18:21:43.306 | INFO     | utils.logger:info:53 | 导入帧: 读取请求_电压数据
+2025-11-25 18:21:43.308 | INFO     | utils.logger:info:53 | [SUCCESS] 成功导入 3 个帧
+2025-11-25 18:21:50.959 | INFO     | utils.logger:info:53 | 
+            <div style='background-color: #d4edda; padding: 5px; margin: 2px;'>
+                <span style='color: #155724;'>✓ 串口连接成功</span>
+            </div>
+            
+2025-11-25 18:21:52.667 | INFO     | utils.logger:info:53 | 开始发送所有帧
+2025-11-25 18:21:53.855 | INFO     | utils.logger:info:53 | 正在发送帧 1/3 (读取请求_通信地址)...
+2025-11-25 18:21:53.856 | INFO     | utils.logger:info:53 | 收到响应: Send: 6817005345aaaaaaaaaaaa104ea00501004001020000ed0316
+2025-11-25 18:21:53.952 | INFO     | utils.logger:info:53 | [SUCCESS] 帧 读取请求_通信地址 匹配成功
+2025-11-25 18:21:53.954 | INFO     | utils.logger:info:53 | 收到响应: Receive: fefefefe682100c30501000307242010cd5d8501004001020001090620240703000100009ec616
+2025-11-25 18:21:55.156 | INFO     | utils.logger:info:53 | 正在发送帧 2/3 (读取请求_日期时间)...
+2025-11-25 18:21:55.157 | INFO     | utils.logger:info:53 | 收到响应: Send: 6817005345aaaaaaaaaaaa104ea00501004000020000561f16
+2025-11-25 18:21:55.241 | INFO     | utils.logger:info:53 | [SUCCESS] 帧 读取请求_日期时间 匹配成功
+2025-11-25 18:21:55.258 | INFO     | utils.logger:info:53 | 收到响应: Receive: fefefefe682100c30501000307242010cd5d85010040000200011c07e90b1912150b00009dd916
+2025-11-25 18:21:56.437 | INFO     | utils.logger:info:53 | 正在发送帧 3/3 (读取请求_电压数据)...
+2025-11-25 18:21:56.438 | INFO     | utils.logger:info:53 | 收到响应: Send: 6817005345aaaaaaaaaaaa104ea00501002000020000e5be16
+2025-11-25 18:21:56.541 | INFO     | utils.logger:info:53 | [SUCCESS] 帧 读取请求_电压数据 匹配成功
+2025-11-25 18:21:56.542 | INFO     | utils.logger:info:53 | 收到响应: Receive: fefefefe682400c305010003072420100956850100200002000101031208c61200001200000000100516
+2025-11-25 18:21:57.735 | INFO     | utils.logger:info:53 | [SUCCESS] 发送完成: 总计 3 个帧

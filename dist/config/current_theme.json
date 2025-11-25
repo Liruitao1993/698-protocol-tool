@@ -1,0 +1,10 @@
+{
+    "background_color": "#ffffff",
+    "text_color": "#24292e",
+    "button_color": "#2ea44f",
+    "button_hover_color": "#2c974b",
+    "table_header_color": "#f6f8fa",
+    "table_border_color": "#e1e4e8",
+    "table_gridline_color": "#f0f2f4",
+    "groupbox_border_color": "#e1e4e8"
+}

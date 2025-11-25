@@ -31,8 +31,9 @@ class TestSystem:
         """初始化信号连接"""
         self.window.add_frame_btn.clicked.connect(self.add_new_frame)
         self.window.delete_frame_btn.clicked.connect(self.delete_selected_frames)
-        self.window.send_frame_btn.clicked.connect(self.send_all_frames)
-        self.window.frame_send_requested.connect(lambda x: self.send_single_frame(x[0], x[1]))
+        # 批量发送按钮由 main_window.py 中的 send_all_frames 处理
+        # self.window.send_frame_btn.clicked.connect(self.send_all_frames)  # 已移除，由UI层处理
+        self.window.frame_send_requested.connect(self.send_single_frame)
         
         # 连接串口数据接收信号，直接使用 MainWindow 的处理方法
         self.serial_handler.data_received.connect(self.window.handle_received_data)
@@ -211,14 +212,14 @@ class TestSystem:
             
             # 添加发送按钮
             send_btn = QPushButton("单帧发送")
-            send_btn.setFont(QFont("黑体", weight=QFont.Bold))
-            send_btn.setFixedWidth(130)  # 设置固定宽度
+            send_btn.setFont(QFont("黑体", 9))  # 减小字体
+            send_btn.setFixedWidth(90)  # 减小宽度从130到90
             send_btn.setStyleSheet("""
                 QPushButton {
                     background-color: #4CAF50;
                     color: white;
                     border-radius: 4px;
-                    padding: 5px;
+                    padding: 4px 8px;  /* 减小内边距 */
                     margin: 2px;
                 }
                 QPushButton:hover {
@@ -258,8 +259,8 @@ class TestSystem:
             
             # 自动调整列宽
             self.window.frame_table.resizeColumnsToContents()
-            operation_column_width = self.window.frame_table.columnWidth(3)
-            self.window.frame_table.setColumnWidth(3, int(operation_column_width * 1.5))
+            # 设置操作列固定宽度
+            self.window.frame_table.setColumnWidth(3, 110)
             
             # 在接收显示区域显示帧内容
             self.window.receive_display.append(f"新建帧 {frame_name}:")
@@ -664,8 +665,15 @@ class TestSystem:
                     # 检查匹配规则
                     match_checkbox = self.window.frame_table.cellWidget(row, 5)
                     if match_checkbox and match_checkbox.isChecked():
-                        match_rule = self.window.frame_table.cellWidget(row, 6).text()
-                        match_mode = self.window.frame_table.cellWidget(row, 7).currentText()
+                        # 启用了匹配，需要根据匹配结果决定是否合格
+                        match_rule_item = self.window.frame_table.item(row, 6)
+                        if match_rule_item:
+                            match_rule = match_rule_item.text()
+                        else:
+                            match_rule = ""
+                        
+                        match_mode_combo = self.window.frame_table.cellWidget(row, 7)
+                        match_mode = match_mode_combo.currentText() if match_mode_combo else "HEX"
                         
                         # 使用 MainWindow 的 match_data 方法进行匹配
                         match_result = self.window.match_data(response, match_rule, match_mode)
@@ -676,6 +684,14 @@ class TestSystem:
                         
                         # 显示匹配结果
                         self.window.display_match_result(match_result, row, frame_name, result_item)
+                    else:
+                        # 未启用匹配，只要收到响应就是PASS
+                        result_item = QTableWidgetItem("PASS")
+                        result_item.setBackground(QColor("#90EE90"))  # 浅绿色背景
+                        self.window.frame_table.setItem(row, 8, result_item)
+                        
+                        # 显示成功信息
+                        self.window.append_log(f"✓ 帧 {frame_name} 测试通过（收到响应）", "success")
                     
                 else:
                     # 发送失败或超时

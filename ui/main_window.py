@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.protocol = None  # 将在外部设置
-        self.setWindowTitle("698.45协议测试系统")
+        self.setWindowTitle("698.45协议测试系统V1.0-2025-11-25")
         self.setMinimumSize(800, 600)
         
         # 确保配置目录存在
@@ -79,6 +79,11 @@ class MainWindow(QMainWindow):
         self.logger = Logger()
         self.logger.info("应用程序启动")
         
+        # 初始化批量发送相关变量
+        self.batch_sending = False
+        self.batch_current_row = 0
+        self.batch_total_rows = 0
+        
         # 添加接收数据的处理方法
         self.init_receive_handler()
 
@@ -110,10 +115,10 @@ class MainWindow(QMainWindow):
         # 串口相关信号
         self.connect_btn.clicked.connect(self.on_connect_clicked)
         
-        # 按钮相关信号（由TestSystem处理，此处不再连接add_frame_btn）
+        # 按钮相关信号（部分由TestSystem处理）
         # self.add_frame_btn.clicked.connect(self.add_new_frame)  # 已在main.py中连接
+        self.send_frame_btn.clicked.connect(self.send_all_frames)  # 批量发送由UI层处理
         self.delete_frame_btn.clicked.connect(self.delete_selected_frames)
-        self.send_frame_btn.clicked.connect(self.send_all_frames)
         self.clear_results_btn.clicked.connect(self.clear_test_results)
         self.export_btn.clicked.connect(self.export_frames)
         self.import_btn.clicked.connect(self.import_frames)
@@ -435,7 +440,7 @@ class MainWindow(QMainWindow):
             0: (40, QHeaderView.ResizeMode.Fixed),              # 序号列
             1: (100, QHeaderView.ResizeMode.Interactive),       # 名称列
             2: (300, QHeaderView.ResizeMode.Interactive),       # 帧内容列
-            3: (150, QHeaderView.ResizeMode.Fixed),             # 操作列
+            3: (110, QHeaderView.ResizeMode.Fixed),             # 操作列 - 从150减小到110
             4: (80, QHeaderView.ResizeMode.Fixed),              # 状态列
             5: (80, QHeaderView.ResizeMode.Fixed),              # 启用匹配列
             6: (300, QHeaderView.ResizeMode.Interactive),       # 匹配规则列
@@ -461,6 +466,9 @@ class MainWindow(QMainWindow):
         self.frame_table.setShowGrid(True)
         self.frame_table.setAlternatingRowColors(True)  # 交替行颜色
         self.frame_table.verticalHeader().setVisible(False)  # 隐藏垂直表头
+        
+        # 设置默认行高，增加到36像素以避免按钮文字被截断
+        self.frame_table.verticalHeader().setDefaultSectionSize(36)
         
         # 设置表格内容的对齐方式 - 使用原生样式
         self.frame_table.setStyleSheet("""
@@ -1631,8 +1639,32 @@ class MainWindow(QMainWindow):
                     # 写入数据
                     for row in range(self.frame_table.rowCount()):
                         frame_name = self.frame_table.item(row, 1).text()
+                        frame_content = self.frame_table.item(row, 2).text()
+                        status = self.frame_table.item(row, 4).text() if self.frame_table.item(row, 4) else ''
+                        
+                        # 获取启用匹配复选框状态
+                        match_checkbox = self.frame_table.cellWidget(row, 5)
+                        match_enabled = '1' if (match_checkbox and match_checkbox.isChecked()) else '0'
+                        
+                        # 获取匹配规则
+                        match_rule_item = self.frame_table.item(row, 6)
+                        match_rule = match_rule_item.text() if match_rule_item else ''
+                        
+                        # 获取匹配模式
+                        mode_combo = self.frame_table.cellWidget(row, 7)
+                        match_mode = mode_combo.currentText() if mode_combo else 'HEX'
+                        
+                        # 获取测试结果
+                        result_item = self.frame_table.item(row, 8)
+                        test_result = result_item.text() if result_item else ''
+                        
+                        # 获取超时时间
+                        timeout_spinbox = self.frame_table.cellWidget(row, 9)
+                        timeout = str(timeout_spinbox.value()) if timeout_spinbox else '1000'
+                        
                         self.append_log(f"导出帧: {frame_name}", "info")
-                        # ... (导出数据的代码保持不变)
+                        writer.writerow([frame_name, frame_content, status, match_enabled, 
+                                       match_rule, match_mode, test_result, timeout])
                 
                 self.append_log(f"成功导出 {self.frame_table.rowCount()} 个帧", "success")
                 QMessageBox.information(self, "成功", "帧列表已成功导出")
@@ -1653,7 +1685,7 @@ class MainWindow(QMainWindow):
                     
                     # 动态取当前行的帧
                     current_frame_name = self.frame_table.item(row, 1).text()
-                    self.frame_send_requested.emit((current_frame_name, row))
+                    self.frame_send_requested.emit(current_frame_name, row)
                     
                     # 设置定时器在超时后重新启用按钮
                     timeout_spinbox = self.frame_table.cellWidget(row, 9)
@@ -1680,34 +1712,40 @@ class MainWindow(QMainWindow):
         
         if file_name:
             try:
+                self.append_log(f"开始导入帧列表从: {file_name}", "info")
+                
                 with open(file_name, 'r', newline='', encoding='utf-8') as file:
                     reader = csv.reader(file)
-                    next(reader)  # 跳过表
+                    next(reader)  # 跳过表头
                     
-                    # 清空现格
+                    # 清空现有表格
                     self.frame_table.setRowCount(0)
                     
-                    # 添加导的数据
+                    # 添加导入的数据
+                    imported_count = 0
                     for row_data in reader:
+                        if len(row_data) < 8:  # 检查数据完整性
+                            continue
+                            
                         row = self.frame_table.rowCount()
                         self.frame_table.insertRow(row)
                         
-                        # 设序号
+                        # 设置序号
                         self.frame_table.setItem(row, 0, QTableWidgetItem(str(row + 1)))
                         # 设置名称和内容
-                        self.frame_table.setItem(row, 1, QTableWidgetItem(row_data[0]))  # 名���
+                        self.frame_table.setItem(row, 1, QTableWidgetItem(row_data[0]))  # 名称
                         self.frame_table.setItem(row, 2, QTableWidgetItem(row_data[1]))  # 帧内容
                         
                         # 添加发送按钮
                         send_btn = QPushButton("单帧发送")
-                        send_btn.setFont(QFont("黑体", weight=QFont.Bold))
-                        send_btn.setFixedWidth(130)
+                        send_btn.setFont(QFont("黑体", 9))  # 减小字体
+                        send_btn.setFixedWidth(90)  # 减小宽度从130到90
                         send_btn.setStyleSheet("""
                             QPushButton {
                                 background-color: #4CAF50;
                                 color: white;
                                 border-radius: 4px;
-                                padding: 5px;
+                                padding: 4px 8px;  /* 减小内边距 */
                                 margin: 2px;
                             }
                             QPushButton:hover {
@@ -1723,7 +1761,7 @@ class MainWindow(QMainWindow):
                         # 设置状态
                         self.frame_table.setItem(row, 4, QTableWidgetItem(row_data[2]))  # 状态
                         
-                        # 设置启用匹配复选������
+                        # 设置启用匹配复选框
                         match_checkbox = QCheckBox()
                         match_checkbox.setChecked(row_data[3] == '1')
                         self.frame_table.setCellWidget(row, 5, match_checkbox)
@@ -1745,18 +1783,24 @@ class MainWindow(QMainWindow):
                         timeout_spinbox.setValue(int(row_data[7]) if len(row_data) > 7 else 1000)
                         self.frame_table.setCellWidget(row, 9, timeout_spinbox)
                         
-                        # 将帧数据保存到协议象中
+                        # 将帧数据保存到协议对象中
                         frame_bytes = bytes.fromhex(row_data[1])
                         self.protocol.save_frame(row_data[0], frame_bytes)
+                        
+                        self.append_log(f"导入帧: {row_data[0]}", "info")
+                        imported_count += 1
                 
-                # 调整列
+                # 调整列宽
                 self.frame_table.resizeColumnsToContents()
-                # 特别处理"操作"列的宽度
-                self.frame_table.setColumnWidth(3, 150)  # 设置固定宽度为150��素
+                # 设置操作列固定宽度
+                self.frame_table.setColumnWidth(3, 110)
                 
-                QMessageBox.information(self, "成功", "帧列表已成功导入！")
+                self.append_log(f"成功导入 {imported_count} 个帧", "success")
+                QMessageBox.information(self, "成功", f"帧列表已成功导入！\n共导入 {imported_count} 个帧")
             except Exception as e:
-                QMessageBox.critical(self, "错误", f"导入失败：{str(e)}")
+                error_msg = f"导入失败：{str(e)}"
+                self.append_log(error_msg, "error")
+                QMessageBox.critical(self, "错误", error_msg)
 
     def create_dockable_log_window(self):
         """创建日志窗口"""
@@ -2234,14 +2278,14 @@ class MainWindow(QMainWindow):
             
             # 创建发送按钮
             send_btn = QPushButton("单帧发送")
-            send_btn.setFont(QFont("黑体", weight=QFont.Bold))
-            send_btn.setFixedWidth(130)
+            send_btn.setFont(QFont("黑体", 9))  # 减小字体
+            send_btn.setFixedWidth(90)  # 减小宽度从130到90
             send_btn.setStyleSheet("""
                 QPushButton {
                     background-color: #4CAF50;
                     color: white;
                     border-radius: 4px;
-                    padding: 5px;
+                    padding: 4px 8px;  /* 减小内边距 */
                     margin: 2px;
                 }
                 QPushButton:hover {
@@ -2846,7 +2890,7 @@ class MainWindow(QMainWindow):
             """)
 
     def send_all_frames(self):
-        """发送所有帧"""
+        """发送所有帧 - 逐个触发单帧发送按钮"""
         self.logger.info("开始发送所有帧")
         if self.frame_table.rowCount() == 0:
             self.append_log("没有可发送的帧！", "warning")
@@ -2857,53 +2901,63 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(
             self,
             "确认发送",
-            f"确定要发送所有帧吗？",
+            f"确定要发送所有帧吗？共 {self.frame_table.rowCount()} 个帧",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
+            # 初始化批量发送状态
+            self.batch_sending = True
+            self.batch_current_row = 0
+            self.batch_total_rows = self.frame_table.rowCount()
+            
             # 初始化计数器
-            self.case_count = self.frame_table.rowCount()
+            self.case_count = self.batch_total_rows
             self.success_count = 0
             self.fail_count = 0
             self.timeout_count = 0
-            success_count = 0  # 添加局部计数器
-            fail_count = 0     # 添加局部计数器
             self.update_status_bar()
             
-            # 从第一行开始发送
-            for row in range(self.frame_table.rowCount()):
-                try:
-                    # 获取帧名称
-                    frame_name = self.frame_table.item(row, 1).text()
-                    self.append_log(f"正在发送帧 {row + 1} ({frame_name})...", "info")
-                    
-                    # 发送帧
-                    self.frame_send_requested.emit((frame_name, row))
-                    
-                    # 更新状态
-                    status_item = self.frame_table.item(row, 4)
-                    if status_item:
-                        status_item.setText("已发送")
-                        success_count += 1
-                        self.append_log(f"帧 {frame_name} 发送成功", "success")
-                    
-                except Exception as e:
-                    fail_count += 1
-                    self.append_log(f"发送帧 {frame_name} 失败: {str(e)}", "error")
-                
-                # 处理事件循环，保持界面响应
-                QApplication.processEvents()
+            # 开始发送第一个帧
+            self.send_next_batch_frame()
+    
+    def send_next_batch_frame(self):
+        """发送下一个批量帧 - 触发单帧发送按钮"""
+        if not self.batch_sending:
+            return
+        
+        # 检查是否已经发送完所有帧
+        if self.batch_current_row >= self.batch_total_rows:
+            # 批量发送完成
+            self.batch_sending = False
+            self.append_log(f"发送完成: 总计 {self.batch_total_rows} 个帧", "success")
+            return
+        
+        # 获取当前行的发送按钮
+        row = self.batch_current_row
+        send_btn = self.frame_table.cellWidget(row, 3)
+        
+        if isinstance(send_btn, QPushButton):
+            frame_name = self.frame_table.item(row, 1).text() if self.frame_table.item(row, 1) else f"帧{row+1}"
+            self.append_log(f"正在发送帧 {row + 1}/{self.batch_total_rows} ({frame_name})...", "info")
             
-            # 显示发送统计
-            self.append_log(f"发送完成: 成功 {success_count} 个, 失败 {fail_count} 个", 
-                           "success" if fail_count == 0 else "warning")
+            # 点击按钮（触发单帧发送）
+            send_btn.click()
             
-            # 更新状态栏
-            self.success_count += success_count
-            self.fail_count += fail_count
-            self.update_status_bar()
+            # 移动到下一行
+            self.batch_current_row += 1
+            
+            # 获取超时时间
+            timeout_spinbox = self.frame_table.cellWidget(row, 9)
+            timeout = timeout_spinbox.value() if timeout_spinbox else 1000
+            
+            # 延迟后发送下一个帧（等待当前帧处理完成）
+            QTimer.singleShot(timeout + 200, self.send_next_batch_frame)
+        else:
+            # 按钮不存在，直接跳过
+            self.batch_current_row += 1
+            QTimer.singleShot(100, self.send_next_batch_frame)
 
     def load_oad_config(self):
         """加载OAD配置"""

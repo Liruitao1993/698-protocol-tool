@@ -25,13 +25,14 @@ class Logger:
         # 移除默认的处理器
         logger.remove()
         
-        # 添加控制台处理器
-        logger.add(
-            sys.stdout,
-            format=log_format,
-            level="INFO",
-            colorize=True
-        )
+        # 添加控制台处理器（仅当sys.stdout存在时）
+        if sys.stdout is not None:
+            logger.add(
+                sys.stdout,
+                format=log_format,
+                level="INFO",
+                colorize=True
+            )
         
         # 添加文件处理器
         logger.add(

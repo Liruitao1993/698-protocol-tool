@@ -1,0 +1,7 @@
+{
+    "port": "COM25",
+    "baudrate": "9600",
+    "parity": "偶校验(E)",
+    "bytesize": "8",
+    "stopbits": "1"
+}
