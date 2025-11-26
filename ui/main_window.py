@@ -3083,7 +3083,107 @@ class MainWindow(QMainWindow):
         # 在TestSystem中连接信号时会调用这个方法
         def handle_received_data(data_hex):
             self.append_log(f"收到响应: {data_hex}", "info")
-            # 可以在这里添加更多的数据处理逻辑
+            
+            # 如果有协议对象，进行698.45协议解析
+            if self.protocol and data_hex.startswith("Receive:"):
+                # 提取接收到的十六进制数据
+                hex_data = data_hex[8:].strip()  # 去掉"Receive: "前缀
+                if hex_data:
+                    try:
+                        # 预处理：去掉透明传输起始符FEFEFE前缀
+                        # 698.45协议支持透明传输，数据可能以FEFEFE开头（大小写不敏感）
+                        if hex_data.upper().startswith("FEFEFE"):
+                            self.append_log("检测到透明传输起始符，正在去掉FEFEFE前缀...", "info")
+                            hex_data = hex_data.replace("fefefe", "", 1).replace("FEFEFE", "", 1)
+                            
+                            # 进一步检查是否有FE前缀（透明传输结束符），需要继续去掉
+                            if hex_data.upper().startswith("FE"):
+                                self.append_log("检测到透明传输结束符FE，继续去掉...", "info")
+                                hex_data = hex_data[2:]  # 去掉FE前缀
+                                
+                            self.append_log(f"预处理后数据: {hex_data}", "info")
+                        
+                        # 将十六进制字符串转换为字节串
+                        frame_bytes = bytes.fromhex(hex_data)
+                        
+                        # 调用698.45协议解析
+                        parse_result = self.protocol.parse_frame(frame_bytes)
+                        
+                        if parse_result:
+                            self.append_log("=== 698.45协议解析结果 ===", "info")
+                            
+                            # 显示控制域信息
+                            control_field = parse_result.get('控制域')
+                            if control_field:
+                                if isinstance(control_field, dict):
+                                    self.append_log(f"控制域原始值: {control_field.get('原始值', 'N/A')}", "info")
+                                    self.append_log(f"  传输方向: {control_field.get('D7-传输方向', 'N/A')}", "info")
+                                    self.append_log(f"  启动标志: {control_field.get('D6-启动标志', 'N/A')}", "info")
+                                    self.append_log(f"  分帧标志: {control_field.get('D5-分帧标志', 'N/A')}", "info")
+                                    self.append_log(f"  数据域标志: {control_field.get('D4-数据域标志', 'N/A')}", "info")
+                                    self.append_log(f"  功能码: {control_field.get('D2-D0-功能码', 'N/A')}", "info")
+                                else:
+                                    self.append_log(f"控制域: {control_field}", "info")
+                            else:
+                                self.append_log("控制域: N/A", "info")
+                            
+                            # 显示SA标志信息
+                            sa_flag = parse_result.get('SA标志')
+                            if sa_flag:
+                                if isinstance(sa_flag, dict):
+                                    self.append_log(f"SA标志原始值: {sa_flag.get('原始值', 'N/A')}", "info")
+                                    self.append_log(f"  地址类型: {sa_flag.get('D7-D6-地址类型', 'N/A')}", "info")
+                                    self.append_log(f"  扩展逻辑地址: {sa_flag.get('D5-扩展逻辑地址', 'N/A')}", "info")
+                                    self.append_log(f"  逻辑地址标志: {sa_flag.get('D4-逻辑地址标志', 'N/A')}", "info")
+                                    self.append_log(f"  地址长度: {sa_flag.get('D3-D0-地址长度', 'N/A')}", "info")
+                                else:
+                                    self.append_log(f"SA标志: {sa_flag}", "info")
+                            else:
+                                self.append_log("SA标志: N/A", "info")
+                            
+                            # 如果有APDU数据，进一步解析
+                            if 'apdu' in parse_result and parse_result['apdu']:
+                                apdu = parse_result['apdu']
+                                self.append_log(f"APDU类型: {apdu.get('type', 'N/A')}", "info")
+                                
+                                # 显示APDU详细信息
+                                if 'services' in apdu:
+                                    self.append_log("服务列表:", "info")
+                                    for service in apdu['services']:
+                                        service_type = service.get('type', 'N/A')
+                                        self.append_log(f"  - 服务类型: {service_type}", "info")
+                                        
+                                        # 如果是读取响应，显示数据项
+                                        if service_type == 'GetResponse' and 'data_objects' in service:
+                                            for obj in service['data_objects']:
+                                                oad = obj.get('oad', 'N/A')
+                                                data = obj.get('data', 'N/A')
+                                                self.append_log(f"    OAD: {oad}, 数据: {data}", "info")
+                                
+                                # 尝试使用FrameParser进一步解析
+                                try:
+                                    from protocol.frame_parser import FrameParser
+                                    frame_parser = FrameParser(self.protocol)
+                                    detailed_result = frame_parser.parse_frame(frame_bytes)
+                                    
+                                    if detailed_result:
+                                        self.append_log("=== 详细帧解析结果 ===", "info")
+                                        for key, value in detailed_result.items():
+                                            if key != 'raw_frame':  # 不显示原始帧数据
+                                                self.append_log(f"{key}: {value}", "info")
+                                except Exception as e:
+                                    self.append_log(f"详细解析失败: {str(e)}", "warning")
+                            
+                            self.append_log("=== 解析完成 ===", "info")
+                        else:
+                            self.append_log("协议解析失败: 无法解析帧结构", "warning")
+                            
+                    except ValueError as e:
+                        self.append_log(f"数据转换错误: {str(e)}", "error")
+                    except Exception as e:
+                        self.append_log(f"协议解析错误: {str(e)}", "error")
+                        import traceback
+                        self.append_log(f"错误详情:\n{traceback.format_exc()}", "error")
         
         # 保存处理方法的引用
         self.handle_received_data = handle_received_data

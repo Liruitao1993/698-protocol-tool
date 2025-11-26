@@ -503,58 +503,52 @@ class Protocol698:
             sa_actual_len = addr_len - ext_logic_content_len
             sa_addr_bytes = frame_bytes[idx:idx+sa_actual_len]
             sa_addr = ''.join(f'{b:02X}' for b in reversed(sa_addr_bytes))
-            result['SA地址'] = sa_addr
+            result['SA地址'] = {
+                '原始值': sa_addr,
+                '长度': sa_actual_len,
+                '地址类型': addr_type_map.get(addr_type_code, '未知')
+            }
             idx += sa_actual_len
             
-            # 7. CA地址 (1字节)
+            # 7. CA客户机地址 (1字节)
             ca = frame_bytes[idx]
-            result['CA地址'] = f'{ca} ({ca:02X}H)'
+            result['CA客户机地址'] = {
+                '原始值': f'{ca:02X}H',
+                '十进制': ca
+            }
             idx += 1
             
-            # 8. HCS校验 (2字节)
+            # 8. HCS帧头校验 (2字节)
+            hcs_pos = idx
             hcs = frame_bytes[idx] | (frame_bytes[idx+1] << 8)
-            result['HCS校验'] = f'{hcs:04X}H'
+            
+            # 计算HCS校验值：从长度域到CA（包含长度域，不包含HCS自身）
+            hcs_data = bytes(frame_bytes[1:hcs_pos])
+            calculated_hcs = self.crc16(hcs_data)
+            
+            result['HCS帧头校验'] = {
+                '原始值': f'{hcs:04X}H',
+                '计算值': f'{calculated_hcs:04X}H',
+                '校验结果': '通过' if hcs == calculated_hcs else '失败'
+            }
             idx += 2
             
-            # 9. APDU (如果有数据域)
+            # 9. 应用层链路用户数据 (如果有数据域)
             if control & 0x10:
-                # 服务类型 (1字节)
-                if idx < len(frame_bytes) - 3:  # 至少要有时间标签+FCS+结束符
-                    service_type = frame_bytes[idx]
-                    result['APDU'] = {
-                        '服务类型码': f'{service_type:02X}H'
+                # 计算应用层链路用户数据长度
+                user_data_len = length - 12  # 长度域 - 12 (固定头部长度)
+                if user_data_len > 0 and idx + user_data_len <= len(frame_bytes):
+                    user_data = frame_bytes[idx:idx+user_data_len]
+                    result['应用层链路用户数据'] = {
+                        '原始值': user_data.hex(),
+                        '长度': user_data_len
                     }
-                    idx += 1
+                    idx += user_data_len
                     
-                    # 数据类型 (1字节)
-                    if idx < len(frame_bytes) - 3:
-                        data_type = frame_bytes[idx]
-                        result['APDU']['数据类型码'] = f'{data_type:02X}H'
-                        idx += 1
-                        
-                        # PIID (1字节)
-                        if idx < len(frame_bytes) - 3:
-                            piid = frame_bytes[idx]
-                            result['APDU']['PIID'] = {
-                                '原始值': f'{piid:02X}H',
-                                '优先级': (piid >> 6) & 0x03,
-                                '序号': piid & 0x3F
-                            }
-                            idx += 1
-                            
-                            # OAD (4字节)
-                            if idx + 4 <= len(frame_bytes) - 3:
-                                oad_bytes = frame_bytes[idx:idx+4]
-                                oad_hex = ''.join(f'{b:02X}' for b in oad_bytes)
-                                result['APDU']['OAD'] = oad_hex
-                                idx += 4
-                                
-                                # 剩余数据（自定义数据）
-                                remaining_len = len(frame_bytes) - idx - 3  # 减去时间标签+FCS+结束符
-                                if remaining_len > 0:
-                                    custom_data = frame_bytes[idx:idx+remaining_len]
-                                    result['APDU']['自定义数据'] = ''.join(f'{b:02X}' for b in custom_data)
-                                    idx += remaining_len
+                    # 尝试解析用户数据
+                    user_data_info = self.parse_user_data(user_data)
+                    if user_data_info:
+                        result['用户数据解析'] = user_data_info
             
             # 10. 时间标签 (1字节)
             if idx < len(frame_bytes) - 3:
@@ -565,7 +559,16 @@ class Protocol698:
             # 11. FCS校验 (2字节)
             if idx + 2 < len(frame_bytes):
                 fcs = frame_bytes[idx] | (frame_bytes[idx+1] << 8)
-                result['FCS校验'] = f'{fcs:04X}H'
+                
+                # 计算FCS校验值：从长度域到时间标签（包含长度域和HCS，不包含FCS自身）
+                fcs_data = bytes(frame_bytes[1:idx])
+                calculated_fcs = self.crc16(fcs_data)
+                
+                result['FCS校验'] = {
+                    '原始值': f'{fcs:04X}H',
+                    '计算值': f'{calculated_fcs:04X}H',
+                    '校验结果': '通过' if fcs == calculated_fcs else '失败'
+                }
                 idx += 2
             
             # 12. 结束符 (0x16)
@@ -578,4 +581,131 @@ class Protocol698:
             return result
             
         except Exception as e:
-            return {'error': f'解析错误: {str(e)}'} 
+            return {'error': f'解析错误: {str(e)}'}
+    
+    def crc16(self, data):
+        """
+        计算CRC16校验值 (CRC-CCITT)
+        
+        Args:
+            data: 要计算的数据字节
+            
+        Returns:
+            int: CRC16校验值
+        """
+        crc = 0xFFFF
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                if crc & 0x0001:
+                    crc = (crc >> 1) ^ 0x8408
+                else:
+                    crc >>= 1
+        return crc
+    
+    def parse_user_data(self, user_data):
+        """
+        解析应用层链路用户数据
+        
+        Args:
+            user_data: 应用层链路用户数据
+            
+        Returns:
+            dict: 解析结果
+        """
+        if len(user_data) < 1:
+            return {'error': '应用层链路用户数据长度不足'}
+        
+        result = {}
+        idx = 0
+        
+        # 控制域 (1字节)
+        if idx < len(user_data):
+            control = user_data[idx]
+            idx += 1
+            
+            result['控制域'] = {
+                '原始值': f'{control:02X}',
+                'DIR': '主站->从站' if (control & 0x80) == 0 else '从站->主站',
+                'PRM': '启动帧' if (control & 0x40) != 0 else '确认帧',
+                'FCB': '帧计数位有效' if (control & 0x20) != 0 else '帧计数位无效',
+                'FCV': '帧计数有效' if (control & 0x10) != 0 else '帧计数无效',
+                '功能码': control & 0x0F
+            }
+        
+        # 链路用户数据
+        if idx < len(user_data):
+            # 判断是否有数据域
+            has_data = (control & 0x10) != 0 if 'control' in locals() else False
+            
+            if has_data:
+                # 数据长度 (1字节)
+                if idx < len(user_data):
+                    data_length = user_data[idx]
+                    idx += 1
+                    
+                    # 数据内容
+                    if idx + data_length <= len(user_data):
+                        data_content = user_data[idx:idx+data_length]
+                        idx += data_length
+                        
+                        result['链路用户数据'] = {
+                            '数据长度': data_length,
+                            '数据内容': data_content.hex()
+                        }
+                        
+                        # 尝试解析数据内容
+                        if data_length >= 4:
+                            # 可能是APDU结构
+                            apdu_info = self.parse_apdu(data_content)
+                            if apdu_info:
+                                result['APDU解析'] = apdu_info
+            else:
+                # 无数据域，剩余部分为链路用户数据
+                remaining_data = user_data[idx:]
+                result['链路用户数据'] = {
+                    '数据长度': len(remaining_data),
+                    '数据内容': remaining_data.hex()
+                }
+        
+        return result
+    
+    def parse_apdu(self, apdu_data):
+        """
+        解析APDU数据
+        
+        Args:
+            apdu_data: APDU数据
+            
+        Returns:
+            dict: 解析结果
+        """
+        if len(apdu_data) < 4:
+            return None
+            
+        result = {}
+        idx = 0
+        
+        # 服务类型 (1字节)
+        service_type = apdu_data[idx]
+        idx += 1
+        result['服务类型'] = f'{service_type:02X}'
+        
+        # 服务属性 (1字节)
+        if idx < len(apdu_data):
+            service_attr = apdu_data[idx]
+            idx += 1
+            result['服务属性'] = f'{service_attr:02X}'
+        
+        # 数据长度 (2字节，小端序)
+        if idx + 1 < len(apdu_data):
+            data_length = apdu_data[idx] | (apdu_data[idx+1] << 8)
+            idx += 2
+            result['数据长度'] = data_length
+            
+            # 数据内容
+            if idx + data_length <= len(apdu_data):
+                data_content = apdu_data[idx:idx+data_length]
+                result['数据内容'] = data_content.hex()
+        
+        return result
