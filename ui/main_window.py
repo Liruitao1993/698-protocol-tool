@@ -90,6 +90,129 @@ class MainWindow(QMainWindow):
     def set_protocol(self, protocol):
         """设置协议对象"""
         self.protocol = protocol
+    
+    def set_database(self, database):
+        """设置数据库对象"""
+        self.database = database
+        # 连接数据库变更信号
+        self.database.data_changed.connect(self.on_database_changed)
+        # 初始加载数据库中的数据
+        self.load_frames_from_database()
+    
+    def on_database_changed(self):
+        """处理数据库数据变更事件"""
+        # 当数据库数据发生变化时，重新加载数据
+        self.load_frames_from_database()
+    
+    def load_frames_from_database(self):
+        """从数据库加载所有帧数据到UI"""
+        try:
+            if not hasattr(self, 'database') or not self.database:
+                return
+                
+            frames = self.database.get_all_frames()
+            if frames:
+                # 清空现有表格
+                self.frame_table.setRowCount(0)
+                
+                # 添加数据库中的帧数据
+                for frame_data in frames:
+                    self.add_frame_row_from_database(frame_data)
+                
+                # 自动调整列宽
+                self.frame_table.resizeColumnsToContents()
+                self.frame_table.setColumnWidth(3, 110)
+                
+                self.append_log(f"从数据库加载了 {len(frames)} 个帧", "info")
+            
+        except Exception as e:
+            self.append_log(f"从数据库加载帧数据失败: {str(e)}", "error")
+    
+    def add_frame_row_from_database(self, frame_data):
+        """从数据库数据添加一行到表格"""
+        row = self.frame_table.rowCount()
+        self.frame_table.insertRow(row)
+        
+        # 设置序号
+        item = QTableWidgetItem(str(row + 1))
+        item.setTextAlignment(Qt.AlignCenter)
+        self.frame_table.setItem(row, 0, item)
+        
+        # 设置名称和帧内容
+        item = QTableWidgetItem(frame_data['name'])
+        item.setTextAlignment(Qt.AlignCenter)
+        self.frame_table.setItem(row, 1, item)
+        
+        self.frame_table.setItem(row, 2, QTableWidgetItem(frame_data['frame_content']))
+        
+        # 添加发送按钮
+        send_btn = QPushButton("单帧发送")
+        send_btn.setFont(QFont("黑体", 9))
+        send_btn.setFixedWidth(90)
+        send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border-radius: 4px;
+                padding: 4px 8px;
+                margin: 2px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+        send_btn.clicked.connect(self.create_button_handler(frame_data['name'], row))
+        self.frame_table.setCellWidget(row, 3, send_btn)
+        
+        # 设置状态
+        item = QTableWidgetItem(frame_data['status'])
+        item.setTextAlignment(Qt.AlignCenter)
+        self.frame_table.setItem(row, 4, item)
+        
+        # 添加匹配启用复选框
+        match_check = QCheckBox()
+        # 先设置值，然后再连接信号，避免触发信号
+        match_check.setChecked(frame_data['match_enabled'])
+        match_check.stateChanged.connect(lambda state, r=row: self.on_match_enabled_changed(r, state))
+        self.frame_table.setCellWidget(row, 5, match_check)
+        
+        # 添加匹配规则
+        match_rule = QLineEdit()
+        # 先设置值，然后再连接信号，避免触发信号
+        match_rule.setText(frame_data['match_rule'])
+        match_rule.setPlaceholderText("输入匹配规则")
+        match_rule.setAlignment(Qt.AlignCenter)
+        match_rule.textChanged.connect(lambda text, r=row: self.on_match_rule_changed(r, text))
+        self.frame_table.setCellWidget(row, 6, match_rule)
+        
+        # 添加匹配模式
+        match_mode = QComboBox()
+        match_mode.addItems(['HEX', 'ASCII'])
+        # 先设置值，然后再连接信号，避免触发信号
+        match_mode.setCurrentText(frame_data['match_mode'])
+        match_mode.currentTextChanged.connect(lambda text, r=row: self.on_match_mode_changed(r, text))
+        self.frame_table.setCellWidget(row, 7, match_mode)
+        
+        # 设置测试结果
+        self.frame_table.setItem(row, 8, QTableWidgetItem(frame_data['test_result']))
+        
+        # 添加超时设置
+        timeout_spin = QSpinBox()
+        timeout_spin.setRange(0, 60000)
+        # 先设置值，然后再连接信号，避免触发信号
+        timeout_spin.setValue(frame_data['timeout_ms'])
+        timeout_spin.setSuffix(" ms")
+        timeout_spin.valueChanged.connect(lambda value, r=row: self.on_timeout_changed(r, value))
+        self.frame_table.setCellWidget(row, 9, timeout_spin)
+        
+        # 将帧数据保存到协议对象中
+        if self.protocol:
+            try:
+                frame_bytes = bytes.fromhex(frame_data['frame_content'])
+                self.protocol.save_frame(frame_data['name'], frame_bytes)
+            except ValueError as e:
+                self.append_log(f"加载帧 {frame_data['name']} 失败: {str(e)}", "warning")
+
 
     def init_signals(self):
         """初始化所有信号连接"""
@@ -1613,65 +1736,56 @@ class MainWindow(QMainWindow):
         return None
 
     def export_frames(self):
-        """导出帧列表到CSV文件"""
-        if self.frame_table.rowCount() == 0:
-            self.append_log("没有可导出的帧数据！", "warning")
-            QMessageBox.warning(self, "警告", "没有可导出的帧数据！")
-            return
+        """导出帧列表到CSV文件（从数据库）"""
+        try:
+            if not hasattr(self, 'database') or not self.database:
+                self.append_log("数据库未初始化！", "error")
+                QMessageBox.warning(self, "警告", "数据库未初始化！")
+                return
+                
+            frames = self.database.get_all_frames()
+            if not frames:
+                self.append_log("没有可导出的帧数据！", "warning")
+                QMessageBox.warning(self, "警告", "没有可导出的帧数据！")
+                return
+                
+            file_name, _ = QFileDialog.getSaveFileName(
+                self,
+                "导出帧列表",
+                "",
+                "CSV文件 (*.csv);;所有文件 (*.*)"
+            )
             
-        file_name, _ = QFileDialog.getSaveFileName(
-            self,
-            "导出帧列表",
-            "",
-            "CSV文件 (*.csv);;所有文件 (*.*)"
-        )
-        
-        if file_name:
-            try:
+            if file_name:
                 self.append_log(f"开始导出帧列表到: {file_name}", "info")
                 with open(file_name, 'w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
                     # 写入表头
-                    headers = ['名称', '帧内容', '状态', '启用匹配', '匹配规则', 
+                    headers = ['名称', '帧内容', '状态', '启用匹配', '匹配规则',
                               '匹配模式', '测试结果', '超时(ms)']
                     writer.writerow(headers)
                     
                     # 写入数据
-                    for row in range(self.frame_table.rowCount()):
-                        frame_name = self.frame_table.item(row, 1).text()
-                        frame_content = self.frame_table.item(row, 2).text()
-                        status = self.frame_table.item(row, 4).text() if self.frame_table.item(row, 4) else ''
-                        
-                        # 获取启用匹配复选框状态
-                        match_checkbox = self.frame_table.cellWidget(row, 5)
-                        match_enabled = '1' if (match_checkbox and match_checkbox.isChecked()) else '0'
-                        
-                        # 获取匹配规则
-                        match_rule_item = self.frame_table.item(row, 6)
-                        match_rule = match_rule_item.text() if match_rule_item else ''
-                        
-                        # 获取匹配模式
-                        mode_combo = self.frame_table.cellWidget(row, 7)
-                        match_mode = mode_combo.currentText() if mode_combo else 'HEX'
-                        
-                        # 获取测试结果
-                        result_item = self.frame_table.item(row, 8)
-                        test_result = result_item.text() if result_item else ''
-                        
-                        # 获取超时时间
-                        timeout_spinbox = self.frame_table.cellWidget(row, 9)
-                        timeout = str(timeout_spinbox.value()) if timeout_spinbox else '1000'
-                        
-                        self.append_log(f"导出帧: {frame_name}", "info")
-                        writer.writerow([frame_name, frame_content, status, match_enabled, 
-                                       match_rule, match_mode, test_result, timeout])
+                    for frame in frames:
+                        match_enabled = '1' if frame['match_enabled'] else '0'
+                        self.append_log(f"导出帧: {frame['name']}", "info")
+                        writer.writerow([
+                            frame['name'],
+                            frame['frame_content'],
+                            frame['status'],
+                            match_enabled,
+                            frame['match_rule'],
+                            frame['match_mode'],
+                            frame['test_result'],
+                            str(frame['timeout_ms'])
+                        ])
                 
-                self.append_log(f"成功导出 {self.frame_table.rowCount()} 个帧", "success")
-                QMessageBox.information(self, "成功", "帧列表已成功导出")
-            except Exception as e:
-                error_msg = f"导出失败：{str(e)}"
-                self.append_log(error_msg, "error")
-                QMessageBox.critical(self, "错误", error_msg)
+                self.append_log(f"成功导出 {len(frames)} 个帧", "success")
+                QMessageBox.information(self, "成功", f"帧列表已成功导出！\n共导出 {len(frames)} 个帧")
+        except Exception as e:
+            error_msg = f"导出失败：{str(e)}"
+            self.append_log(error_msg, "error")
+            QMessageBox.critical(self, "错误", error_msg)
 
     def create_button_handler(self, frame_name, row):
         """创建按钮处理函数"""
@@ -1702,7 +1816,7 @@ class MainWindow(QMainWindow):
         return handler
 
     def import_frames(self):
-        """从CSV文件导入帧列表"""
+        """从CSV文件导入帧列表（并保存到数据库）"""
         file_name, _ = QFileDialog.getOpenFileName(
             self,
             "导入帧列表",
@@ -1718,84 +1832,46 @@ class MainWindow(QMainWindow):
                     reader = csv.reader(file)
                     next(reader)  # 跳过表头
                     
-                    # 清空现有表格
-                    self.frame_table.setRowCount(0)
-                    
-                    # 添加导入的数据
-                    imported_count = 0
+                    # 读取CSV数据
+                    csv_data = []
                     for row_data in reader:
-                        if len(row_data) < 8:  # 检查数据完整性
-                            continue
-                            
-                        row = self.frame_table.rowCount()
-                        self.frame_table.insertRow(row)
-                        
-                        # 设置序号
-                        self.frame_table.setItem(row, 0, QTableWidgetItem(str(row + 1)))
-                        # 设置名称和内容
-                        self.frame_table.setItem(row, 1, QTableWidgetItem(row_data[0]))  # 名称
-                        self.frame_table.setItem(row, 2, QTableWidgetItem(row_data[1]))  # 帧内容
-                        
-                        # 添加发送按钮
-                        send_btn = QPushButton("单帧发送")
-                        send_btn.setFont(QFont("黑体", 9))  # 减小字体
-                        send_btn.setFixedWidth(90)  # 减小宽度从130到90
-                        send_btn.setStyleSheet("""
-                            QPushButton {
-                                background-color: #4CAF50;
-                                color: white;
-                                border-radius: 4px;
-                                padding: 4px 8px;  /* 减小内边距 */
-                                margin: 2px;
-                            }
-                            QPushButton:hover {
-                                background-color: #45a049;
-                            }
-                        """)
-                        frame_name = row_data[0]  # 存帧名称局部变量
-                        
-                        # 使用专门的处理函数
-                        send_btn.clicked.connect(self.create_button_handler(frame_name, row))
-                        self.frame_table.setCellWidget(row, 3, send_btn)
-                        
-                        # 设置状态
-                        self.frame_table.setItem(row, 4, QTableWidgetItem(row_data[2]))  # 状态
-                        
-                        # 设置启用匹配复选框
-                        match_checkbox = QCheckBox()
-                        match_checkbox.setChecked(row_data[3] == '1')
-                        self.frame_table.setCellWidget(row, 5, match_checkbox)
-                        
-                        # 设置匹配规则
-                        self.frame_table.setItem(row, 6, QTableWidgetItem(row_data[4]))
-                        
-                        # 设置匹配模式
-                        mode_combo = QComboBox()
-                        mode_combo.addItems(["HEX", "ASCII"])
-                        mode_combo.setCurrentText(row_data[5])
-                        self.frame_table.setCellWidget(row, 7, mode_combo)
-                        
-                        # 设置测试结果
-                        self.frame_table.setItem(row, 8, QTableWidgetItem(row_data[6]))
-                        
-                        # 设置超时时间
-                        timeout_spinbox = self.create_timeout_spinbox(row)
-                        timeout_spinbox.setValue(int(row_data[7]) if len(row_data) > 7 else 1000)
-                        self.frame_table.setCellWidget(row, 9, timeout_spinbox)
-                        
-                        # 将帧数据保存到协议对象中
-                        frame_bytes = bytes.fromhex(row_data[1])
-                        self.protocol.save_frame(row_data[0], frame_bytes)
-                        
-                        self.append_log(f"导入帧: {row_data[0]}", "info")
-                        imported_count += 1
+                        if len(row_data) >= 8:  # 检查数据完整性
+                            csv_data.append(row_data)
+                    
+                    if not csv_data:
+                        self.append_log("CSV文件中没有有效数据", "warning")
+                        QMessageBox.warning(self, "警告", "CSV文件中没有有效数据！")
+                        return
+                    
+                    # 先清空数据库
+                    if hasattr(self, 'database') and self.database:
+                        self.database.clear_all_frames()
+                        self.append_log("已清空数据库中的旧数据", "info")
+                    
+                    # 逐个保存到数据库
+                    imported_count = 0
+                    for row_data in csv_data:
+                        try:
+                            # 保存到数据库
+                            frame_id = self.database.add_frame(
+                                name=row_data[0],
+                                frame_content=row_data[1],
+                                status=row_data[2] if len(row_data) > 2 else '未发送',
+                                match_enabled=(row_data[3] == '1') if len(row_data) > 3 else False,
+                                match_rule=row_data[4] if len(row_data) > 4 else '',
+                                match_mode=row_data[5] if len(row_data) > 5 else 'HEX',
+                                test_result=row_data[6] if len(row_data) > 6 else '',
+                                timeout_ms=int(row_data[7]) if len(row_data) > 7 and row_data[7].isdigit() else 1000
+                            )
+                            imported_count += 1
+                            self.append_log(f"导入帧: {row_data[0]} (ID: {frame_id})", "info")
+                        except Exception as e:
+                            self.append_log(f"导入帧 {row_data[0]} 失败: {str(e)}", "error")
                 
-                # 调整列宽
-                self.frame_table.resizeColumnsToContents()
-                # 设置操作列固定宽度
-                self.frame_table.setColumnWidth(3, 110)
+                # 重新从数据库加载到UI
+                self.load_frames_from_database()
                 
-                self.append_log(f"成功导入 {imported_count} 个帧", "success")
+                self.append_log(f"成功导入 {imported_count} 个帧到数据库", "success")
                 QMessageBox.information(self, "成功", f"帧列表已成功导入！\n共导入 {imported_count} 个帧")
             except Exception as e:
                 error_msg = f"导入失败：{str(e)}"
@@ -2350,43 +2426,85 @@ class MainWindow(QMainWindow):
             self.append_log(f"错误详情:\n{traceback.format_exc()}", "error")
 
     def clear_test_results(self):
-        """清除所有测试结果"""
-        for row in range(self.frame_table.rowCount()):
-            # 只清除测试结果列
-            result_item = QTableWidgetItem("")
-            self.frame_table.setItem(row, 8, result_item)
-            # 重置测试结果列的背景色
-            result_item.setBackground(QColor("white"))
+        """清除所有测试结果（同时更新数据库）"""
+        try:
+            # 更新UI
+            for row in range(self.frame_table.rowCount()):
+                # 只清除测试结果列
+                result_item = QTableWidgetItem("")
+                self.frame_table.setItem(row, 8, result_item)
+                # 重置测试结果列的背景色
+                result_item.setBackground(QColor("white"))
+            
+            # 更新数据库
+            if hasattr(self, 'database') and self.database:
+                frames = self.database.get_all_frames()
+                for frame in frames:
+                    self.database.update_frame(frame['id'], test_result="")
+                
+                self.append_log("已清除所有测试结果", "success")
+            else:
+                self.append_log("数据库未初始化，无法更新测试结果", "warning")
+                
+        except Exception as e:
+            self.append_log(f"清除测试结果失败: {str(e)}", "error")
+
 
     def on_cell_changed(self, row, column):
         """处理表格单元格化"""
-        if column == 1 and self.editing_frame_name is not None:  # 名称列
-            new_name = self.frame_table.item(row, 1).text()
-            if self.editing_frame_name != new_name and self.protocol:
-                # 获取帧数据
-                frame_data = self.protocol.get_frame(self.editing_frame_name)
-                if frame_data:
-                    # 使用��名称保存帧数据
-                    self.protocol.save_frame(new_name, frame_data)
-                    # 删除旧名称的帧数据
-                    self.protocol.frames.pop(self.editing_frame_name, None)
+        try:
+            if column == 1 and self.editing_frame_name is not None:  # 名称列
+                new_name = self.frame_table.item(row, 1).text()
+                if self.editing_frame_name != new_name and self.protocol:
+                    # 获取帧数据
+                    frame_data = self.protocol.get_frame(self.editing_frame_name)
+                    if frame_data:
+                        # 使用新名称保存帧数据
+                        self.protocol.save_frame(new_name, frame_data)
+                        # 删除旧名称的帧数据
+                        self.protocol.frames.pop(self.editing_frame_name, None)
+                        
+                        # 同步到数据库，但不发射信号避免循环
+                        if hasattr(self, 'database') and self.database:
+                            frames = self.database.get_all_frames()
+                            for frame in frames:
+                                if frame['name'] == self.editing_frame_name:
+                                    self.database.update_frame(frame['id'], emit_signal=False, name=new_name)
+                                    break
+                        
+                        self.append_log(f"帧名称已更新: {self.editing_frame_name} -> {new_name}", "success")
+                    else:
+                        self.append_log(f"错误: 找不到原始帧 \"{self.editing_frame_name}\" 的数据", "error")
                     
-                    # 在志区域示称更新信息
-                    self.append_log(f"""
-                    <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
-                        <span style='color: #2e7d32;'>帧名称已更新: {self.editing_frame_name} -> {new_name}</span>
-                    </div>
-                    """)
-                else:
-                    # 如果不到始帧数据，显示错误信息
-                    self.append_log(f"""
-                    <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
-                        <span style='color: #721c24;'>错误: 找不到原始帧 "{self.editing_frame_name}" 的数据</span>
-                    </div>
-                    """)
+                # 重置编辑状态
+                self.editing_frame_name = None
+            
+            elif column == 2:  # 帧内容列
+                frame_name_item = self.frame_table.item(row, 1)
+                frame_content_item = self.frame_table.item(row, 2)
                 
-            # 重置编辑状态
-            self.editing_frame_name = None
+                if frame_name_item and frame_content_item:
+                    frame_name = frame_name_item.text()
+                    frame_content = frame_content_item.text()
+                    
+                    # 同步到数据库，但不发射信号避免循环
+                    if hasattr(self, 'database') and self.database:
+                        frames = self.database.get_all_frames()
+                        for frame in frames:
+                            if frame['name'] == frame_name:
+                                self.database.update_frame(frame['id'], emit_signal=False, frame_content=frame_content)
+                                break
+                    
+                    # 更新协议对象中的帧数据
+                    if self.protocol:
+                        try:
+                            frame_bytes = bytes.fromhex(frame_content)
+                            self.protocol.save_frame(frame_name, frame_bytes)
+                        except ValueError:
+                            self.append_log(f"无效的帧内容格式: {frame_content}", "error")
+        
+        except Exception as e:
+            self.append_log(f"更新单元格失败: {str(e)}", "error")
 
     def on_item_double_clicked(self, item):
         """当单元格被双击时记录原始名称"""
@@ -2406,17 +2524,84 @@ class MainWindow(QMainWindow):
 
     def on_timeout_changed(self, row, value):
         """处理超时值变化"""
-        # 更新当前行的超时设置
-        if hasattr(self, 'default_timeout'):
-            self.default_timeout.setValue(value)
-        
-        # 在日志区域显示超时更新信息
-        frame_name = self.frame_table.item(row, 1).text()
-        self.append_log(f"""
-        <div style='background-color: #e8f5e9; padding: 5px; margin: 2px;'>
-            <span style='color: #2e7d32;'>✓ 帧 {row + 1} ({frame_name}) 超时时间已更新: {value}ms</span>
-        </div>
-        """)
+        try:
+            # 获取帧名称和数据库ID
+            frame_name_item = self.frame_table.item(row, 1)
+            if not frame_name_item:
+                return
+            
+            frame_name = frame_name_item.text()
+            
+            # 同步到数据库，但不发射信号避免循环
+            if hasattr(self, 'database') and self.database:
+                frames = self.database.get_all_frames()
+                for frame in frames:
+                    if frame['name'] == frame_name:
+                        self.database.update_frame(frame['id'], emit_signal=False, timeout_ms=value)
+                        break
+        except Exception as e:
+            self.append_log(f"更新超时设置失败: {str(e)}", "error")
+    
+    def on_match_enabled_changed(self, row, state):
+        """处理匹配启用状态变化"""
+        try:
+            # 获取帧名称
+            frame_name_item = self.frame_table.item(row, 1)
+            if not frame_name_item:
+                return
+            
+            frame_name = frame_name_item.text()
+            match_enabled = (state == Qt.CheckState.Checked.value)
+            
+            # 同步到数据库，但不发射信号避免循环
+            if hasattr(self, 'database') and self.database:
+                frames = self.database.get_all_frames()
+                for frame in frames:
+                    if frame['name'] == frame_name:
+                        self.database.update_frame(frame['id'], emit_signal=False, match_enabled=match_enabled)
+                        break
+        except Exception as e:
+            self.append_log(f"更新匹配启用状态失败: {str(e)}", "error")
+    
+    def on_match_rule_changed(self, row, text):
+        """处理匹配规则变化"""
+        try:
+            # 获取帧名称
+            frame_name_item = self.frame_table.item(row, 1)
+            if not frame_name_item:
+                return
+            
+            frame_name = frame_name_item.text()
+            
+            # 同步到数据库，但不发射信号避免循环
+            if hasattr(self, 'database') and self.database:
+                frames = self.database.get_all_frames()
+                for frame in frames:
+                    if frame['name'] == frame_name:
+                        self.database.update_frame(frame['id'], emit_signal=False, match_rule=text)
+                        break
+        except Exception as e:
+            self.append_log(f"更新匹配规则失败: {str(e)}", "error")
+    
+    def on_match_mode_changed(self, row, text):
+        """处理匹配模式变化"""
+        try:
+            # 获取帧名称
+            frame_name_item = self.frame_table.item(row, 1)
+            if not frame_name_item:
+                return
+            
+            frame_name = frame_name_item.text()
+            
+            # 同步到数据库，但不发射信号避免循环
+            if hasattr(self, 'database') and self.database:
+                frames = self.database.get_all_frames()
+                for frame in frames:
+                    if frame['name'] == frame_name:
+                        self.database.update_frame(frame['id'], emit_signal=False, match_mode=text)
+                        break
+        except Exception as e:
+            self.append_log(f"更新匹配模式失败: {str(e)}", "error")
 
     def change_style(self, style_name):
         """更改应用程序的主题风格"""
@@ -3082,110 +3267,134 @@ class MainWindow(QMainWindow):
         """初始化接收数据处理"""
         # 在TestSystem中连接信号时会调用这个方法
         def handle_received_data(data_hex):
-            self.append_log(f"收到响应: {data_hex}", "info")
+            self.append_log(f"{data_hex}", "info")
             
-            # 如果有协议对象，进行698.45协议解析
-            if self.protocol and data_hex.startswith("Receive:"):
-                # 提取接收到的十六进制数据
-                hex_data = data_hex[8:].strip()  # 去掉"Receive: "前缀
-                if hex_data:
-                    try:
-                        # 预处理：去掉透明传输起始符FEFEFE前缀
-                        # 698.45协议支持透明传输，数据可能以FEFEFE开头（大小写不敏感）
-                        if hex_data.upper().startswith("FEFEFE"):
-                            self.append_log("检测到透明传输起始符，正在去掉FEFEFE前缀...", "info")
-                            hex_data = hex_data.replace("fefefe", "", 1).replace("FEFEFE", "", 1)
+            # # 如果有协议对象，进行698.45协议解析
+            # if self.protocol and data_hex.startswith("Receive:"):
+            #     # 提取接收到的十六进制数据
+            #     hex_data = data_hex[8:].strip()  # 去掉"Receive: "前缀
+            #     if hex_data:
+            #         try:
+            #             # 预处理：去掉透明传输起始符FEFEFE前缀
+            #             # 698.45协议支持透明传输，数据可能以FEFEFE开头（大小写不敏感）
+            #             if hex_data.upper().startswith("FEFEFE"):
+            #                 self.append_log("检测到透明传输起始符，正在去掉FEFEFE前缀...", "info")
+            #                 hex_data = hex_data.replace("fefefe", "", 1).replace("FEFEFE", "", 1)
                             
-                            # 进一步检查是否有FE前缀（透明传输结束符），需要继续去掉
-                            if hex_data.upper().startswith("FE"):
-                                self.append_log("检测到透明传输结束符FE，继续去掉...", "info")
-                                hex_data = hex_data[2:]  # 去掉FE前缀
+            #                 # 进一步检查是否有FE前缀（透明传输结束符），需要继续去掉
+            #                 if hex_data.upper().startswith("FE"):
+            #                     self.append_log("检测到透明传输结束符FE，继续去掉...", "info")
+            #                     hex_data = hex_data[2:]  # 去掉FE前缀
                                 
-                            self.append_log(f"预处理后数据: {hex_data}", "info")
+            #                 self.append_log(f"预处理后数据: {hex_data}", "info")
                         
-                        # 将十六进制字符串转换为字节串
-                        frame_bytes = bytes.fromhex(hex_data)
+            #             # 将十六进制字符串转换为字节串
+            #             frame_bytes = bytes.fromhex(hex_data)
                         
-                        # 调用698.45协议解析
-                        parse_result = self.protocol.parse_frame(frame_bytes)
+            #             # 调用698.45协议解析
+            #             parse_result = self.protocol.parse_frame(frame_bytes)
                         
-                        if parse_result:
-                            self.append_log("=== 698.45协议解析结果 ===", "info")
+            #             if parse_result:
+            #                 self.append_log("=== 698.45协议解析结果 ===", "info")
                             
-                            # 显示控制域信息
-                            control_field = parse_result.get('控制域')
-                            if control_field:
-                                if isinstance(control_field, dict):
-                                    self.append_log(f"控制域原始值: {control_field.get('原始值', 'N/A')}", "info")
-                                    self.append_log(f"  传输方向: {control_field.get('D7-传输方向', 'N/A')}", "info")
-                                    self.append_log(f"  启动标志: {control_field.get('D6-启动标志', 'N/A')}", "info")
-                                    self.append_log(f"  分帧标志: {control_field.get('D5-分帧标志', 'N/A')}", "info")
-                                    self.append_log(f"  数据域标志: {control_field.get('D4-数据域标志', 'N/A')}", "info")
-                                    self.append_log(f"  功能码: {control_field.get('D2-D0-功能码', 'N/A')}", "info")
-                                else:
-                                    self.append_log(f"控制域: {control_field}", "info")
-                            else:
-                                self.append_log("控制域: N/A", "info")
+            #                 # 显示控制域信息
+            #                 control_field = parse_result.get('控制域')
+            #                 if control_field:
+            #                     if isinstance(control_field, dict):
+            #                         self.append_log(f"控制域原始值: {control_field.get('原始值', 'N/A')}", "info")
+            #                         self.append_log(f"  传输方向: {control_field.get('D7-传输方向', 'N/A')}", "info")
+            #                         self.append_log(f"  启动标志: {control_field.get('D6-启动标志', 'N/A')}", "info")
+            #                         self.append_log(f"  分帧标志: {control_field.get('D5-分帧标志', 'N/A')}", "info")
+            #                         self.append_log(f"  数据域标志: {control_field.get('D4-数据域标志', 'N/A')}", "info")
+            #                         self.append_log(f"  功能码: {control_field.get('D2-D0-功能码', 'N/A')}", "info")
+            #                     else:
+            #                         self.append_log(f"控制域: {control_field}", "info")
+            #                 else:
+            #                     self.append_log("控制域: N/A", "info")
                             
-                            # 显示SA标志信息
-                            sa_flag = parse_result.get('SA标志')
-                            if sa_flag:
-                                if isinstance(sa_flag, dict):
-                                    self.append_log(f"SA标志原始值: {sa_flag.get('原始值', 'N/A')}", "info")
-                                    self.append_log(f"  地址类型: {sa_flag.get('D7-D6-地址类型', 'N/A')}", "info")
-                                    self.append_log(f"  扩展逻辑地址: {sa_flag.get('D5-扩展逻辑地址', 'N/A')}", "info")
-                                    self.append_log(f"  逻辑地址标志: {sa_flag.get('D4-逻辑地址标志', 'N/A')}", "info")
-                                    self.append_log(f"  地址长度: {sa_flag.get('D3-D0-地址长度', 'N/A')}", "info")
-                                else:
-                                    self.append_log(f"SA标志: {sa_flag}", "info")
-                            else:
-                                self.append_log("SA标志: N/A", "info")
+            #                 # 显示SA标志信息
+            #                 sa_flag = parse_result.get('SA标志')
+            #                 if sa_flag:
+            #                     if isinstance(sa_flag, dict):
+            #                         self.append_log(f"SA标志原始值: {sa_flag.get('原始值', 'N/A')}", "info")
+            #                         self.append_log(f"  地址类型: {sa_flag.get('D7-D6-地址类型', 'N/A')}", "info")
+            #                         self.append_log(f"  扩展逻辑地址: {sa_flag.get('D5-扩展逻辑地址', 'N/A')}", "info")
+            #                         self.append_log(f"  逻辑地址标志: {sa_flag.get('D4-逻辑地址标志', 'N/A')}", "info")
+            #                         self.append_log(f"  地址长度: {sa_flag.get('D3-D0-地址长度', 'N/A')}", "info")
+            #                     else:
+            #                         self.append_log(f"SA标志: {sa_flag}", "info")
+            #                 else:
+            #                     self.append_log("SA标志: N/A", "info")
                             
-                            # 如果有APDU数据，进一步解析
-                            if 'apdu' in parse_result and parse_result['apdu']:
-                                apdu = parse_result['apdu']
-                                self.append_log(f"APDU类型: {apdu.get('type', 'N/A')}", "info")
+            #                 # 如果有用户数据解析，进一步解析
+            #                 if '用户数据解析' in parse_result and parse_result['用户数据解析']:
+            #                     user_data = parse_result['用户数据解析']
+            #                     self.append_log("=== 用户数据解析 ===", "info")
                                 
-                                # 显示APDU详细信息
-                                if 'services' in apdu:
-                                    self.append_log("服务列表:", "info")
-                                    for service in apdu['services']:
-                                        service_type = service.get('type', 'N/A')
-                                        self.append_log(f"  - 服务类型: {service_type}", "info")
-                                        
-                                        # 如果是读取响应，显示数据项
-                                        if service_type == 'GetResponse' and 'data_objects' in service:
-                                            for obj in service['data_objects']:
-                                                oad = obj.get('oad', 'N/A')
-                                                data = obj.get('data', 'N/A')
-                                                self.append_log(f"    OAD: {oad}, 数据: {data}", "info")
+            #                     # 显示链路控制域信息
+            #                     if '控制域' in user_data:
+            #                         control = user_data['控制域']
+            #                         if isinstance(control, dict):
+            #                             self.append_log(f"链路控制域: {control.get('原始值', 'N/A')}", "info")
+            #                             self.append_log(f"  DIR: {control.get('DIR', 'N/A')}", "info")
+            #                             self.append_log(f"  PRM: {control.get('PRM', 'N/A')}", "info")
+            #                             self.append_log(f"  FCB: {control.get('FCB', 'N/A')}", "info")
+            #                             self.append_log(f"  FCV: {control.get('FCV', 'N/A')}", "info")
+            #                             self.append_log(f"  功能码: {control.get('功能码', 'N/A')}", "info")
+            #                         else:
+            #                             self.append_log(f"链路控制域: {control}", "info")
                                 
-                                # 尝试使用FrameParser进一步解析
-                                try:
-                                    from protocol.frame_parser import FrameParser
-                                    frame_parser = FrameParser(self.protocol)
-                                    detailed_result = frame_parser.parse_frame(frame_bytes)
+            #                     # 显示链路用户数据信息
+            #                     if '链路用户数据' in user_data:
+            #                         user_data_info = user_data['链路用户数据']
+            #                         if isinstance(user_data_info, dict):
+            #                             self.append_log(f"链路用户数据长度: {user_data_info.get('数据长度', 'N/A')}", "info")
+            #                             self.append_log(f"链路用户数据内容: {user_data_info.get('数据内容', 'N/A')}", "info")
+            #                         else:
+            #                             self.append_log(f"链路用户数据: {user_data_info}", "info")
+                                
+            #                     # 显示APDU解析信息
+            #                     if 'APDU解析' in user_data:
+            #                         apdu = user_data['APDU解析']
+            #                         if isinstance(apdu, dict):
+            #                             self.append_log("=== APDU解析 ===", "info")
+            #                             if '服务类型' in apdu:
+            #                                 self.append_log(f"服务类型: {apdu['服务类型']}", "info")
+            #                             if '服务属性' in apdu:
+            #                                 self.append_log(f"服务属性: {apdu['服务属性']}", "info")
+            #                             if '数据长度' in apdu:
+            #                                 self.append_log(f"数据长度: {apdu['数据长度']}", "info")
+            #                             if '数据内容' in apdu:
+            #                                 self.append_log(f"数据内容: {apdu['数据内容']}", "info")
+            #                         else:
+            #                             self.append_log(f"APDU解析: {apdu}", "info")
+                                
+            #                     # 尝试使用FrameParser进一步解析
+            #                     try:
+            #                         from protocol.frame_parser import FrameParser
+            #                         frame_parser = FrameParser(self.protocol)
+            #                         detailed_result = frame_parser.parse_frame(frame_bytes)
                                     
-                                    if detailed_result:
-                                        self.append_log("=== 详细帧解析结果 ===", "info")
-                                        for key, value in detailed_result.items():
-                                            if key != 'raw_frame':  # 不显示原始帧数据
-                                                self.append_log(f"{key}: {value}", "info")
-                                except Exception as e:
-                                    self.append_log(f"详细解析失败: {str(e)}", "warning")
+            #                         if detailed_result:
+            #                             self.append_log("=== 详细帧解析结果 ===", "info")
+            #                             for key, value in detailed_result.items():
+            #                                 if key != 'raw_frame':  # 不显示原始帧数据
+            #                                     self.append_log(f"{key}: {value}", "info")
+            #                     except Exception as e:
+            #                         self.append_log(f"详细解析失败: {str(e)}", "warning")
                             
-                            self.append_log("=== 解析完成 ===", "info")
-                        else:
-                            self.append_log("协议解析失败: 无法解析帧结构", "warning")
+            #                 self.append_log("=== 解析完成 ===", "info")
+            #             else:
+            #                 self.append_log("协议解析失败: 无法解析帧结构", "warning")
                             
-                    except ValueError as e:
-                        self.append_log(f"数据转换错误: {str(e)}", "error")
-                    except Exception as e:
-                        self.append_log(f"协议解析错误: {str(e)}", "error")
-                        import traceback
-                        self.append_log(f"错误详情:\n{traceback.format_exc()}", "error")
+        #             except ValueError as e:
+        #                 self.append_log(f"数据转换错误: {str(e)}", "error")
+        #             except Exception as e:
+        #                 self.append_log(f"协议解析错误: {str(e)}", "error")
+        #                 import traceback
+        #                 self.append_log(f"错误详情:\n{traceback.format_exc()}", "error")
         
-        # 保存处理方法的引用
+        # # 保存处理方法的引用
         self.handle_received_data = handle_received_data
 
     def display_received_message(self, message):
@@ -3204,36 +3413,44 @@ class MainWindow(QMainWindow):
                 # 获取匹配启用状态
                 match_checkbox = self.frame_table.cellWidget(row, 5)
                 if match_checkbox and match_checkbox.isChecked():
-                    # 获取匹配规则
+                    # 获取匹配规则 - 第6列可能是QLineEdit(Widget)或QTableWidgetItem(Item)
                     match_rule_widget = self.frame_table.cellWidget(row, 6)
+                    match_rule = ""
                     if isinstance(match_rule_widget, QLineEdit):
+                        # 如果是QLineEdit，直接获取文本
                         match_rule = match_rule_widget.text()
-                        if match_rule:
-                            # 获取匹配模式
-                            match_mode_combo = self.frame_table.cellWidget(row, 7)
-                            if isinstance(match_mode_combo, QComboBox):
-                                match_mode = match_mode_combo.currentText()
-                                # 执行匹配
-                                match_result = self.match_data(received_bytes, match_rule, match_mode)
-                                
-                                # 更新测试结果
-                                result_item = self.frame_table.item(row, 8)
-                                if not result_item:
-                                    result_item = QTableWidgetItem()
-                                    self.frame_table.setItem(row, 8, result_item)
-                                
-                                # 获取帧名称
-                                frame_name = self.frame_table.item(row, 1).text()
-                                
-                                # 显示匹配结果
-                                self.display_match_result(match_result, row, frame_name, result_item)
-                                
-                                # 更新状态栏计数
-                                if match_result['match']:
-                                    self.success_count += 1
-                                else:
-                                    self.fail_count += 1
-                                self.update_status_bar()
+                    else:
+                        # 如果是QTableWidgetItem，使用item方法
+                        match_rule_item = self.frame_table.item(row, 6)
+                        if match_rule_item:
+                            match_rule = match_rule_item.text()
+                    
+                    if match_rule:
+                        # 获取匹配模式
+                        match_mode_combo = self.frame_table.cellWidget(row, 7)
+                        if isinstance(match_mode_combo, QComboBox):
+                            match_mode = match_mode_combo.currentText()
+                            # 执行匹配
+                            match_result = self.match_data(received_bytes, match_rule, match_mode)
+                            
+                            # 更新测试结果
+                            result_item = self.frame_table.item(row, 8)
+                            if not result_item:
+                                result_item = QTableWidgetItem()
+                                self.frame_table.setItem(row, 8, result_item)
+                            
+                            # 获取帧名称
+                            frame_name = self.frame_table.item(row, 1).text()
+                            
+                            # 显示匹配结果
+                            self.display_match_result(match_result, row, frame_name, result_item)
+                            
+                            # 更新状态栏计数
+                            if match_result['match']:
+                                self.success_count += 1
+                            else:
+                                self.fail_count += 1
+                            self.update_status_bar()
                 
                 # 标记响应已处理
                 self.waiting_for_response = False
@@ -3297,17 +3514,23 @@ class MainWindow(QMainWindow):
                 'error': f"匹配错误: {str(e)}"
             }
 
-    def display_match_result(self, match_result, row, frame_name, result_item):
+    def display_match_result(self, match_result, row, frame_name, result_item, match_rule):
         """显示匹配结果"""
         if match_result['match']:
             result_item.setText("PASS")
             result_item.setBackground(QColor("#90EE90"))  # 浅绿色
-            self.append_log(f"帧 {frame_name} 匹配成功", "success")
+            self.append_log(f"帧 {row + 1} ({frame_name}) 匹配成功", "success")
         else:
             if 'mismatches' in match_result:
+                print("进来了")
                 # 显示具体的不匹配位置
                 result_item.setText("FAIL")
                 result_item.setBackground(QColor("#FFB6C1"))  # 浅红色
+                mismatches = match_result['mismatches']
+                mismatch_info = f"帧 {row + 1} ({frame_name}) 匹配失败"
+                mismatch_info += f"帧 {row + 1} ({match_rule})"
+                for pos, expected, actual in match_result['mismatches']:
+                    mismatch_info += f"位置 {pos}: 期望={expected}, 实际={actual}\n"
                 
                 # 构建带颜色标记的不匹配信息
                 data = match_result['data']
@@ -3328,8 +3551,8 @@ class MainWindow(QMainWindow):
                 self.append_log(f"""
                 <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
                     <span style='color: #721c24;'>帧 {frame_name} 匹配失败</span><br>
-                    <span style='font-family: monospace;'>实��数据: {''.join(colored_data)}</span><br>
-                    <span style='font-family: monospace;'>期望规则: {match_result.get('rule', '')}</span>
+                    <span style='font-family: monospace;'>实际数据: {''.join(colored_data)}</span><br>
+                    <span style='font-family: monospace;'>期望规则: {match_rule}</span>
                 </div>
                 """, "error")
 

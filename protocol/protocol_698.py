@@ -438,8 +438,17 @@ class Protocol698:
         try:
             if not frame_bytes or len(frame_bytes) < 10:
                 return {'error': '帧长度不足'}
+
+            for byte in frame_bytes:
+                if byte == 0xfe:
+                    frame_bytes = frame_bytes[1:]
+                else:
+                    break
+            
+            print(frame_bytes.hex(' '))
             
             result = {}
+            
             idx = 0
             
             # 1. 起始符 (0x68)
@@ -534,11 +543,15 @@ class Protocol698:
             idx += 2
             
             # 9. 应用层链路用户数据 (如果有数据域)
-            if control & 0x10:
+            if control & 0xff:
                 # 计算应用层链路用户数据长度
-                user_data_len = length - 12  # 长度域 - 12 (固定头部长度)
+                # 从当前位置到帧结束（不包括时间标签、FCS和结束符）
+                remaining_bytes = len(frame_bytes) - idx - 4  # 减去时间标签(1) + FCS(2) + 结束符(1)
+                user_data_len = remaining_bytes
+                
                 if user_data_len > 0 and idx + user_data_len <= len(frame_bytes):
                     user_data = frame_bytes[idx:idx+user_data_len]
+                    print(f"应用层链路用户数据原始值: {user_data.hex()}")
                     result['应用层链路用户数据'] = {
                         '原始值': user_data.hex(),
                         '长度': user_data_len
@@ -635,38 +648,40 @@ class Protocol698:
         
         # 链路用户数据
         if idx < len(user_data):
-            # 判断是否有数据域
-            has_data = (control & 0x10) != 0 if 'control' in locals() else False
+            # 剩余数据即为链路用户数据
+            remaining_data = user_data[idx:]
             
-            if has_data:
-                # 数据长度 (1字节)
-                if idx < len(user_data):
-                    data_length = user_data[idx]
-                    idx += 1
+            if len(remaining_data) > 0:
+                # 检查第一个字节是否为长度字段（常见模式）
+                data_length = remaining_data[0]
+                
+                # 如果剩余数据长度与声明的长度匹配，按长度解析
+                if len(remaining_data) >= 1 + data_length:
+                    data_content = remaining_data[1:1+data_length]
                     
-                    # 数据内容
-                    if idx + data_length <= len(user_data):
-                        data_content = user_data[idx:idx+data_length]
-                        idx += data_length
-                        
-                        result['链路用户数据'] = {
-                            '数据长度': data_length,
-                            '数据内容': data_content.hex()
-                        }
-                        
-                        # 尝试解析数据内容
-                        if data_length >= 4:
-                            # 可能是APDU结构
-                            apdu_info = self.parse_apdu(data_content)
-                            if apdu_info:
-                                result['APDU解析'] = apdu_info
-            else:
-                # 无数据域，剩余部分为链路用户数据
-                remaining_data = user_data[idx:]
-                result['链路用户数据'] = {
-                    '数据长度': len(remaining_data),
-                    '数据内容': remaining_data.hex()
-                }
+                    result['链路用户数据'] = {
+                        '数据长度': data_length,
+                        '数据内容': data_content.hex()
+                    }
+                    
+                    # 尝试解析数据内容
+                    if data_length >= 4:
+                        # 可能是APDU结构
+                        apdu_info = self.parse_apdu(data_content)
+                        if apdu_info:
+                            result['APDU解析'] = apdu_info
+                else:
+                    # 无法按长度解析，直接显示全部数据
+                    result['链路用户数据'] = {
+                        '数据长度': len(remaining_data),
+                        '数据内容': remaining_data.hex()
+                    }
+                    
+                    # 尝试将整个数据作为APDU解析
+                    if len(remaining_data) >= 4:
+                        apdu_info = self.parse_apdu(remaining_data)
+                        if apdu_info:
+                            result['APDU解析'] = apdu_info
         
         return result
     

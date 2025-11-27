@@ -1,9 +1,10 @@
 import sys
-from PySide6.QtWidgets import QApplication, QPushButton, QTableWidgetItem, QComboBox, QCheckBox, QSpinBox, QMessageBox
+from PySide6.QtWidgets import QApplication, QPushButton, QTableWidgetItem, QComboBox, QCheckBox, QSpinBox, QMessageBox, QLineEdit
 from PySide6.QtCore import QDateTime, QTimer
 from PySide6.QtGui import QColor, QFont
 from ui.main_window import MainWindow
 from utils.serial_handler import SerialHandler
+from utils.database_handler import DatabaseHandler
 from protocol.protocol_698 import Protocol698
 import re
 import time
@@ -16,13 +17,17 @@ class TestSystem:
         self.serial_handler = SerialHandler()
         self.protocol = Protocol698()
         
-        # 设置window的protocol属性
+        # 初始化数据库连接
+        self.database = DatabaseHandler("frames.db")
+        
+        # 设置window的protocol和database属性
         self.window.set_protocol(self.protocol)
+        self.window.set_database(self.database)  # 这里会自动触发加载数据库数据
         
         self.update_port_list()
         self.setup_receive_display()
         self.init_connections()
-        
+
     def setup_receive_display(self):
         """Setup the UI component for displaying received messages."""
         self.window.receive_display.clear()  # Assuming a QTextEdit or similar widget
@@ -199,6 +204,18 @@ class TestSystem:
             # 将帧保存到协议对象中
             self.protocol.save_frame(frame_name, frame)
             
+            # 保存到数据库
+            frame_id = self.database.add_frame(
+                name=frame_name,
+                frame_content=frame.hex(),
+                status="就绪",
+                match_enabled=False,
+                match_rule="",
+                match_mode="HEX",
+                test_result="",
+                timeout_ms=self.window.default_timeout.value()
+            )
+            
             # 添加新行
             row = self.window.frame_table.rowCount()
             self.window.frame_table.insertRow(row)
@@ -226,7 +243,7 @@ class TestSystem:
                     background-color: #45a049;
                 }
             """)
-            send_btn.clicked.connect(lambda checked, name=frame_name: self.send_single_frame(name, row))
+            send_btn.clicked.connect(lambda checked, name=frame_name, r=row: self.send_single_frame(name, r))
             self.window.frame_table.setCellWidget(row, 3, send_btn)
             
             # 设置状态
@@ -266,6 +283,9 @@ class TestSystem:
             self.window.receive_display.append(f"新建帧 {frame_name}:")
             self.window.receive_display.append(f"帧内容: {frame.hex()}")
             self.window.receive_display.append("------------------------")
+            
+            # 显示数据库保存成功信息
+            self.window.append_log(f"✓ 新帧已保存到数据库 (ID: {frame_id})", "success")
             
         except Exception as e:
             print(f"添加帧错误: {e}")
@@ -397,15 +417,24 @@ class TestSystem:
                 # 获取匹配启用状态
                 match_checkbox = self.window.frame_table.cellWidget(row, 5)
                 if match_checkbox and match_checkbox.isChecked():
-                    # 获取匹配规则
-                    rule_item = self.window.frame_table.item(row, 6)
-                    if rule_item and rule_item.text().strip():
+                    # 获取匹配规则 - 第6列可能是QLineEdit(Widget)或QTableWidgetItem(Item)
+                    match_rule_widget = self.window.frame_table.cellWidget(row, 6)
+                    rule = ""
+                    if isinstance(match_rule_widget, QLineEdit):
+                        # 如果是QLineEdit，直接获取文本
+                        rule = match_rule_widget.text().strip()
+                    else:
+                        # 如果是QTableWidgetItem，使用item方法
+                        rule_item = self.window.frame_table.item(row, 6)
+                        if rule_item:
+                            rule = rule_item.text().strip()
+                    
+                    if rule:
                         # 获取匹配模式
                         mode_combo = self.window.frame_table.cellWidget(row, 7)
                         if mode_combo:
                             # 执行匹配
                             match_mode = mode_combo.currentText()
-                            rule = rule_item.text().strip()
                             match_result = self.match_data(received_bytes, rule, match_mode)
                             
                             # 更新测试结果
@@ -443,8 +472,7 @@ class TestSystem:
                 # 数据转换为六进制字符串
                 data_hex = data.hex().upper()
                 # 规则中的空格去掉转换为大写
-                rule = rule.replace(" ", "").upper()
-                
+                rule = rule.replace(" ", "").upper()        
                 if len(data_hex) != len(rule):
                     return {
                         'match': False,
@@ -493,8 +521,30 @@ class TestSystem:
         if not selected_rows:
             return
         
+        # 获取要删除的帧名称和数据库ID
+        frames_to_delete = []
         for row in sorted(selected_rows, reverse=True):
             frame_name = self.window.frame_table.item(row, 1).text()
+            frames_to_delete.append((row, frame_name))
+        
+        # 从数据库删除
+        frame_ids_to_delete = []
+        for row, frame_name in frames_to_delete:
+            # 查找对应的数据库ID（这里简化处理，实际应用中可能需要维护ID映射）
+            # 为了简化，我们直接使用帧名称来查找
+            frames = self.database.get_all_frames()
+            for frame in frames:
+                if frame['name'] == frame_name:
+                    frame_ids_to_delete.append(frame['id'])
+                    break
+        
+        # 从数据库删除
+        if frame_ids_to_delete:
+            deleted_count = self.database.delete_frames(frame_ids_to_delete)
+            self.window.append_log(f"✓ 已从数据库删除 {deleted_count} 个帧", "success")
+        
+        # 从UI和协议对象中删除
+        for row, frame_name in reversed(frames_to_delete):
             self.window.frame_table.removeRow(row)
             # 从协议对象中删除帧
             if hasattr(self.protocol, 'frames'):
@@ -658,6 +708,15 @@ class TestSystem:
                 success, response = self.serial_handler.send_frame(frame, timeout)
                 
                 if success and response:
+                    # 解析响应帧
+                    parsed_response = self.protocol.parse_frame(response)
+                    if parsed_response:
+                        # 显示解析后的响应
+                        self.window.append_log(f"<span style='color: #155724;'>Receive: {response.hex(' ')}</span>", "info")
+                        self.window.append_log(f"<span style='color: #155724;'>解析响应: {parsed_response}</span>", "info")
+                    else:
+                        self.window.append_log(f"错误: 无法解析响应帧 {response.hex()}", "error")
+                        
                     # 更新状态列
                     status_item = QTableWidgetItem("已发送")
                     self.window.frame_table.setItem(row, 4, status_item)
@@ -666,24 +725,43 @@ class TestSystem:
                     match_checkbox = self.window.frame_table.cellWidget(row, 5)
                     if match_checkbox and match_checkbox.isChecked():
                         # 启用了匹配，需要根据匹配结果决定是否合格
-                        match_rule_item = self.window.frame_table.item(row, 6)
-                        if match_rule_item:
-                            match_rule = match_rule_item.text()
+                        # 第6列可能是QLineEdit(Widget)或QTableWidgetItem(Item)
+                        match_rule_widget = self.window.frame_table.cellWidget(row, 6)
+                        if isinstance(match_rule_widget, QLineEdit):
+                            # 如果是QLineEdit，直接获取文本
+                            match_rule = match_rule_widget.text()
                         else:
-                            match_rule = ""
+                            # 如果是QTableWidgetItem，使用item方法
+                            match_rule_item = self.window.frame_table.item(row, 6)
+                            if match_rule_item:
+                                match_rule = match_rule_item.text()
+                            else:
+                                match_rule = ""
                         
                         match_mode_combo = self.window.frame_table.cellWidget(row, 7)
                         match_mode = match_mode_combo.currentText() if match_mode_combo else "HEX"
                         
                         # 使用 MainWindow 的 match_data 方法进行匹配
+                        print(f"response  ={response.hex()}")
+                        print(f"match_rule={match_rule}")
+                        self.window.append_log(f"response  ={response.hex()}", "info")
+                        self.window.append_log(f"match_rule={match_rule}", "info")
+                        
                         match_result = self.window.match_data(response, match_rule, match_mode)
+                        print(f"{match_result}")
+                        self.window.append_log(f"{match_result}", "info")
                         
                         # 更新测试结果
                         result_item = QTableWidgetItem()
                         self.window.frame_table.setItem(row, 8, result_item)
                         
-                        # 显示匹配结果
-                        self.window.display_match_result(match_result, row, frame_name, result_item)
+                        try:
+                            # 显示匹配结果
+                            self.window.display_match_result(match_result, row, frame_name, result_item, match_rule)
+                            if not match_result['match']:
+                                self.display_mismatch_details(match_result, row, frame_name, result_item)
+                        except Exception as e:
+                            self.window.append_log(f"显示匹配结果时出错: {e}", "error")
                     else:
                         # 未启用匹配，只要收到响应就是PASS
                         result_item = QTableWidgetItem("PASS")
@@ -702,7 +780,7 @@ class TestSystem:
                     self.window.frame_table.setItem(row, 8, result_item)
                     
             except Exception as e:
-                self.window.append_log(f"发送帧失败: {str(e)}", "error")
+                self.window.append_log(f"发送帧失败: {e}", "error")
         else:
             QMessageBox.warning(self.window, "错误", "请先连接串口！")
 
@@ -758,7 +836,7 @@ class TestSystem:
         self.window.receive_display.append(f"""
         <div style='background-color: #f8d7da; padding: 5px; margin: 2px;'>
             <span style='color: #721c24;'>✗ 帧 {row + 1} ({frame_name}) 匹配失败:</span>
-            <pre style='margin: 5px 0;'>{mismatch_info}</pre>
+            <pre style='margin: 5px 0;'color: #721c24;'>{mismatch_info}</pre>
             <div style='font-family: monospace;'>数据对比: {colored_data}</div>
         </div>
         """)
